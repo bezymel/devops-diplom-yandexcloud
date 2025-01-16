@@ -20,3 +20,26 @@ variable "zone" {
   type        = string
   default     = "ru-central1-b"
 }
+
+variable "token" {
+  type        = string
+  description = "OAuth-token; https://cloud.yandex.ru/docs/iam/concepts/authorization/oauth-token"
+}
+
+variable "cloud_id" {
+  type        = string
+  description = "https://cloud.yandex.ru/docs/resource-manager/operations/cloud/get-id"
+}
+
+### ssh vars
+
+variable "security_group_id" {
+  type        = string
+  description = "ID of the security group to associate with the instances"
+}
+
+variable "ssh_key" {
+  description = "The public ssh key"
+  type        = string
+  sensitive   = true
+}
