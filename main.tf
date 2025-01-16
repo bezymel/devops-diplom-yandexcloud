@@ -9,7 +9,7 @@ terraform {
 }
 
 provider "yandex" {
-  service_account_key_file = var.service_account_key_file
+  service_account_key_file = file("/home/bezumel/authorized_key.json")
   token              = var.token
   folder_id          = var.folder_id
   zone               = var.zone
