@@ -9,8 +9,8 @@ terraform {
 }
 
 provider "yandex" {
-  service_account_key_file = file("/home/bezumel/authorized_key.json") # Путь к вашему ключу сервисного аккаунта
-  folder_id          = var.folder_id  # ID вашей папки в Яндекс.Облаке
-  zone               = "ru-central1-b"  # Зона, где будет развернут кластер
+  service_account_key_file = file("/home/bezumel/authorized_key.json") 
+  folder_id          = var.folder_id  
+  zone               = "ru-central1-b" 
 }
 
