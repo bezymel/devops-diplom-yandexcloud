@@ -46,3 +46,9 @@ variable "ssh_key" {
   type        = string
   sensitive   = true
 }
+
+variable "service_account_key_file" {
+  description = "The public ssh key"
+  type        = string
+}
+
