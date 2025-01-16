@@ -4,6 +4,7 @@ variable "storage_bucket_name" {
 }
 
 variable "service_account_key" {
+  description = "service_account_key"
   type        = string
 }
 
