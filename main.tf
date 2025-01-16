@@ -14,11 +14,3 @@ provider "yandex" {
   zone               = "ru-central1-b"  # Зона, где будет развернут кластер
 }
 
-resource "yandex_storage_bucket" "my_bucket" {
-  name     = "my-bucket-name"
-  location = "ru-central1"
-}
-
-output "bucket_id" {
-  value = yandex_storage_bucket.my_bucket.id
-}
