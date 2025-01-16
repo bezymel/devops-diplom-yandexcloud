@@ -29,6 +29,11 @@ variable "cloud_id" {
   description = "https://cloud.yandex.ru/docs/resource-manager/operations/cloud/get-id"
 }
 
+variable "subnet_id" {
+  description = "ID of the subnet where the instances will be deployed"
+  type        = string
+}
+
 ### ssh vars
 
 variable "security_group_id" {
