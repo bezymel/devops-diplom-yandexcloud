@@ -1,13 +1,3 @@
-variable "storage_bucket_name" {
-  description = "my-bucket-name"
-  type        = string
-}
-
-variable "service_account_key" {
-  description = "service_account_key"
-  type        = string
-}
-
 variable "folder_id" {
   type        = string
   description = "folder_id"
@@ -46,9 +36,3 @@ variable "ssh_key" {
   type        = string
   sensitive   = true
 }
-
-variable "service_account_key_file" {
-  description = "The public ssh key"
-  type        = string
-}
-
