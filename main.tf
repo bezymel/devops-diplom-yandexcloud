@@ -10,7 +10,12 @@ terraform {
 
 provider "yandex" {
   service_account_key_file = file("/home/bezumel/authorized_key.json")
-  token              = var.token
+#  token              = var.token
   folder_id          = var.folder_id
   zone               = var.zone
+}
+
+resource "yandex_iam_service_account" "my_service_account" {
+  name        = "bezumel"
+  description = "Description of the service account."           
 }
