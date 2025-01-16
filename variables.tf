@@ -10,7 +10,6 @@ variable "service_account_key" {
 
 variable "folder_id" {
   type        = string
-  default     = "b1gaadh5jrnspg1gklri"
   description = "folder_id"
 }
 
