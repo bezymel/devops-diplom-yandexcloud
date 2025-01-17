@@ -137,7 +137,7 @@ terraform output s3_secret_key     #Выводит значение ключа
 2. Подготовьте [backend](https://www.terraform.io/docs/language/settings/backends/index.html) для Terraform:  
    а. Рекомендуемый вариант: S3 bucket в созданном ЯО аккаунте(создание бакета через TF)
 
-   * Узнаем значения ключей командами что описаны выше и прописываем их в файл providers.tf
+  * Узнаем значения ключей командами что описаны выше и прописываем их в файл providers.tf
 
 providers.tf
 ```
