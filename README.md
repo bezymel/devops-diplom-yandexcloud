@@ -121,6 +121,14 @@ token  =  "https://yandex.cloud/ru/docs/iam/concepts/authorization/oauth-token"
 cloud_id  = "https://console.yandex.cloud/cloud/"
 folder_id = "https://console.yandex.cloud/folders/"
 ```
+   * Применяем изменения и узнаем значения ключей
+```
+terraform plan                     #Показывает план изменений
+terraform apply                    #Применяет изменения
+terraform output s3_access_key     #Выводит значение ключа
+terraform output s3_secret_key     #Выводит значение ключа
+```
+
 ![image](https://github.com/user-attachments/assets/466a6cb8-d74a-4816-a4cf-01ac9699bdad)
 ![image](https://github.com/user-attachments/assets/6b18f3a2-88bf-41a8-8a3f-ac3fd25f5e3c)
 ![image](https://github.com/user-attachments/assets/95ab38c0-ce01-45b7-bca4-0299cc4d686f)
