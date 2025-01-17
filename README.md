@@ -134,9 +134,58 @@ terraform output s3_secret_key     #Выводит значение ключа
 ![image](https://github.com/user-attachments/assets/95ab38c0-ce01-45b7-bca4-0299cc4d686f)
 
   
-3. Подготовьте [backend](https://www.terraform.io/docs/language/settings/backends/index.html) для Terraform:  
+2. Подготовьте [backend](https://www.terraform.io/docs/language/settings/backends/index.html) для Terraform:  
    а. Рекомендуемый вариант: S3 bucket в созданном ЯО аккаунте(создание бакета через TF)
-   б. Альтернативный вариант:  [Terraform Cloud](https://app.terraform.io/)
+
+   * Узнаем значения ключей командами что описаны выше и прописываем их в файл providers.tf
+
+providers.tf
+```
+terraform {
+  required_providers {
+    yandex = {
+      source = "yandex-cloud/yandex"
+    }
+  }
+
+   backend "s3" {
+    endpoint                    = "https://storage.yandexcloud.net"
+    bucket                      = "diplom-project-nemcev"
+    region                      = "ru-central1"
+    key                         = "terraform.tfstate"
+    access_key                  = "my_access_key"
+    secret_key                  = "my_secret_key"
+    skip_region_validation      = true
+    skip_credentials_validation = true
+  }
+
+  required_version = ">=1.4"
+  }
+
+provider "yandex" {
+  token = var.token
+  cloud_id = var.cloud_id
+  folder_id = var.folder_id
+  zone = var.default_zone
+}
+```
+   * Теперь создаем сам бакет, потому что нельзя настроить удаленное хранение состояния конфигурации терраформ в бакете, не создав при этом сам бакет:
+
+```
+yc storage bucket create --name diplom-project-nemcev
+```
+![image](https://github.com/user-attachments/assets/7700c454-6054-4067-a553-0366048d9d05)
+
+Инициализируем инфраструктуру:
+
+```
+terraform init
+```
+![image](https://github.com/user-attachments/assets/c10eb8ae-88aa-433a-9707-3572df909f64)
+![image](https://github.com/user-attachments/assets/fbe6a0dc-4cad-4059-aadc-0bd6915212a9)
+
+
+   
 4. Создайте конфигурацию Terrafrom, используя созданный бакет ранее как бекенд для хранения стейт файла. Конфигурации Terraform для создания сервисного аккаунта и бакета и основной инфраструктуры следует сохранить в разных папках.
 5. Создайте VPC с подсетями в разных зонах доступности.
 6. Убедитесь, что теперь вы можете выполнить команды `terraform destroy` и `terraform apply` без дополнительных ручных действий.
