@@ -42,7 +42,7 @@
 
 main.tf
 ```
-СоздаeM сервисный аккаунт
+#СоздаeM сервисный аккаунт
 
 resource "yandex_iam_service_account" "ww" {
   name = var.ww_name
@@ -121,6 +121,9 @@ token  =  "https://yandex.cloud/ru/docs/iam/concepts/authorization/oauth-token"
 cloud_id  = "https://console.yandex.cloud/cloud/"
 folder_id = "https://console.yandex.cloud/folders/"
 ```
+![image](https://github.com/user-attachments/assets/466a6cb8-d74a-4816-a4cf-01ac9699bdad)
+![image](https://github.com/user-attachments/assets/6b18f3a2-88bf-41a8-8a3f-ac3fd25f5e3c)
+![image](https://github.com/user-attachments/assets/95ab38c0-ce01-45b7-bca4-0299cc4d686f)
 
   
 3. Подготовьте [backend](https://www.terraform.io/docs/language/settings/backends/index.html) для Terraform:  
