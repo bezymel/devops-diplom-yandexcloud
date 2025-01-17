@@ -208,8 +208,83 @@ terraform init
 
 
    
-4. Создайте конфигурацию Terrafrom, используя созданный бакет ранее как бекенд для хранения стейт файла. Конфигурации Terraform для создания сервисного аккаунта и бакета и основной инфраструктуры следует сохранить в разных папках.
-5. Создайте VPC с подсетями в разных зонах доступности.
+3. Создайте конфигурацию Terrafrom, используя созданный бакет ранее как бекенд для хранения стейт файла. Конфигурации Terraform для создания сервисного аккаунта и бакета и основной инфраструктуры следует сохранить в разных папках.
+
+* Создаем отдельную папку и помещаем все файлы туда, для разделения. Что бы в случае выполнения команды terraform destroy не удаляло наш сервисный аккаунт и бэкенд.
+  
+![image](https://github.com/user-attachments/assets/5ed9dc8c-43df-4aac-95dd-9be5b085c91c)
+
+
+4. Создайте VPC с подсетями в разных зонах доступности.
+
+  * Создаем VPC с подсетями в разных зонах доступности
+```
+#Создаем VPC с подсетями в разных зонах доступности
+
+resource "yandex_vpc_network" "my_vpc" {
+  name = var.VPC_name
+}
+
+resource "yandex_vpc_subnet" "public_subnet" {
+  count = length(var.public_subnet_zones)
+  name  = "${var.public_subnet_name}-${var.public_subnet_zones[count.index]}"
+  v4_cidr_blocks = [
+    cidrsubnet(var.public_v4_cidr_blocks[0], 4, count.index)
+  ]
+  zone       = var.public_subnet_zones[count.index]
+  network_id = yandex_vpc_network.my_vpc.id
+}
+```
+
+  * Указываем переменные:
+
+```
+### vpc vars
+
+variable "VPC_name" {
+  type        = string
+  default     = "my-vpc"
+}
+
+### subnet vars
+
+variable "public_subnet_name" {
+  type        = string
+  default     = "public"
+}
+
+variable "public_v4_cidr_blocks" {
+  type        = list(string)
+  default     = ["192.168.10.0/24"]
+}
+
+variable "subnet_zone" {
+  type        = string
+  default     = "ru-central1"
+}
+
+variable "public_subnet_zones" {
+  type    = list(string)
+  default = ["ru-central1-a", "ru-central1-b",  "ru-central1-d"]
+}
+```
+
+Выполняем команду:
+
+```
+terraform apply
+```
+
+![image](https://github.com/user-attachments/assets/6515cf78-8555-4203-90c7-950360f5c2a3)
+![image](https://github.com/user-attachments/assets/7e2bad67-bab9-4b45-a7b3-e8ed7d304527)
+![image](https://github.com/user-attachments/assets/8d2aaf11-a048-4ca7-95cd-54c4854124c7)
+
+Выполняем команду:
+
+```
+terraform destroy
+```
+
 6. Убедитесь, что теперь вы можете выполнить команды `terraform destroy` и `terraform apply` без дополнительных ручных действий.
 7. В случае использования [Terraform Cloud](https://app.terraform.io/) в качестве [backend](https://www.terraform.io/docs/language/settings/backends/index.html) убедитесь, что применение изменений успешно проходит, используя web-интерфейс Terraform cloud.
 
