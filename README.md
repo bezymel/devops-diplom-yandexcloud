@@ -278,6 +278,8 @@ terraform apply
 ![image](https://github.com/user-attachments/assets/6515cf78-8555-4203-90c7-950360f5c2a3)
 ![image](https://github.com/user-attachments/assets/7e2bad67-bab9-4b45-a7b3-e8ed7d304527)
 ![image](https://github.com/user-attachments/assets/8d2aaf11-a048-4ca7-95cd-54c4854124c7)
+![image](https://github.com/user-attachments/assets/d6c9a20d-a76e-4593-ae61-df62462ffd20)
+
 
 Выполняем команду:
 
@@ -285,7 +287,10 @@ terraform apply
 terraform destroy
 ```
 
-6. Убедитесь, что теперь вы можете выполнить команды `terraform destroy` и `terraform apply` без дополнительных ручных действий.
+5. Убедитесь, что теперь вы можете выполнить команды `terraform destroy` и `terraform apply` без дополнительных ручных действий.
+
+При выполнении команды terraform destroy удаляются все вычислительные ресурсы, кроме нашего бакета и загруженного в него terraform.tfstate, а также созданной нами сети my-vpc (ожидаемый результат).
+ 
 7. В случае использования [Terraform Cloud](https://app.terraform.io/) в качестве [backend](https://www.terraform.io/docs/language/settings/backends/index.html) убедитесь, что применение изменений успешно проходит, используя web-интерфейс Terraform cloud.
 
 Ожидаемые результаты:
