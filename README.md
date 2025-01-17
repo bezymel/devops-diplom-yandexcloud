@@ -37,13 +37,99 @@
 Предварительная подготовка к установке и запуску Kubernetes кластера.
 
 1. Создайте сервисный аккаунт, который будет в дальнейшем использоваться Terraform для работы с инфраструктурой с необходимыми и достаточными правами. Не стоит использовать права суперпользователя
-2. Подготовьте [backend](https://www.terraform.io/docs/language/settings/backends/index.html) для Terraform:  
+
+  * Создаем сервисный аккаунт, добавляем права storage.admin и создаем ключ доступа к нашему хранилищу:
+
+main.tf
+```
+СоздаeM сервисный аккаунт
+
+resource "yandex_iam_service_account" "ww" {
+  name = var.ww_name
+  description = "Description of the service account."
+}
+
+#Добавляем права storage.admin
+
+resource "yandex_resourcemanager_folder_iam_member" "ww-admin" {
+  folder_id = var.folder_id
+  role      = "storage.admin"
+  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+}
+
+#Создаем ключ доступа к нашему хранилищу
+
+resource "yandex_iam_service_account_static_access_key" "ww-static-key" {
+  service_account_id = yandex_iam_service_account.ww.id
+  description        = "static access key for object storage"
+}
+```
+   * Чтобы получить ключ доступа и привытный ключ, суонфигурированный вышеуказанным кодом - подготовим возможность вывода значений ключей в терминал, для чего создадим файл outputs.tf
+
+outputs.tf
+```
+output "s3_access_key" {
+  description = "Yandex Cloud S3 access key"
+  value       = yandex_iam_service_account_static_access_key.ww-static-key.access_key
+  sensitive   = true
+}
+
+output "s3_secret_key" {
+  description = "Yandex Cloud S3 secret key"
+  value       = yandex_iam_service_account_static_access_key.ww-static-key.secret_key
+  sensitive   = true
+}
+```
+   * Так же опишем переменные в файле variables.tf 
+
+variables.tf 
+```
+### cloud vars
+
+variable "folder_id" {
+  type        = string
+  description = "folder_id"
+}
+
+variable "default_zone" {
+  description = "Availability zone for the instances"
+  type        = string
+  default     = "ru-central1-a"
+}
+
+variable "token" {
+  type        = string
+  description = "OAuth-token; https://cloud.yandex.ru/docs/iam/concepts/authorization/oauth-token"
+}
+
+variable "cloud_id" {
+  type        = string
+  description = "https://cloud.yandex.ru/docs/resource-manager/operations/cloud/get-id"
+}
+
+variable "ww_name" {
+  description = "Service account name"
+  type        = string
+  default     = "ww"
+}
+```
+   * Файл для значений переменных personal.auto.tfvars
+
+personal.auto.tfvars
+```
+token  =  "https://yandex.cloud/ru/docs/iam/concepts/authorization/oauth-token"
+cloud_id  = "https://console.yandex.cloud/cloud/"
+folder_id = "https://console.yandex.cloud/folders/"
+```
+
+  
+3. Подготовьте [backend](https://www.terraform.io/docs/language/settings/backends/index.html) для Terraform:  
    а. Рекомендуемый вариант: S3 bucket в созданном ЯО аккаунте(создание бакета через TF)
    б. Альтернативный вариант:  [Terraform Cloud](https://app.terraform.io/)
-3. Создайте конфигурацию Terrafrom, используя созданный бакет ранее как бекенд для хранения стейт файла. Конфигурации Terraform для создания сервисного аккаунта и бакета и основной инфраструктуры следует сохранить в разных папках.
-4. Создайте VPC с подсетями в разных зонах доступности.
-5. Убедитесь, что теперь вы можете выполнить команды `terraform destroy` и `terraform apply` без дополнительных ручных действий.
-6. В случае использования [Terraform Cloud](https://app.terraform.io/) в качестве [backend](https://www.terraform.io/docs/language/settings/backends/index.html) убедитесь, что применение изменений успешно проходит, используя web-интерфейс Terraform cloud.
+4. Создайте конфигурацию Terrafrom, используя созданный бакет ранее как бекенд для хранения стейт файла. Конфигурации Terraform для создания сервисного аккаунта и бакета и основной инфраструктуры следует сохранить в разных папках.
+5. Создайте VPC с подсетями в разных зонах доступности.
+6. Убедитесь, что теперь вы можете выполнить команды `terraform destroy` и `terraform apply` без дополнительных ручных действий.
+7. В случае использования [Terraform Cloud](https://app.terraform.io/) в качестве [backend](https://www.terraform.io/docs/language/settings/backends/index.html) убедитесь, что применение изменений успешно проходит, используя web-интерфейс Terraform cloud.
 
 Ожидаемые результаты:
 
