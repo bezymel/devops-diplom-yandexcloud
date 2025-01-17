@@ -64,6 +64,28 @@ resource "yandex_iam_service_account_static_access_key" "ww-static-key" {
   description        = "static access key for object storage"
 }
 ```
+
+   * Создаем файл providers.tf
+```
+terraform {
+  required_providers {
+    yandex = {
+      source = "yandex-cloud/yandex"
+    }
+  }
+
+  required_version = ">=1.4"
+  }
+
+provider "yandex" {
+  token = var.token
+  cloud_id = var.cloud_id
+  folder_id = var.folder_id
+  zone = var.default_zone
+}
+
+```
+
    * Чтобы получить ключ доступа и привытный ключ, суонфигурированный вышеуказанным кодом - подготовим возможность вывода значений ключей в терминал, для чего создадим файл outputs.tf
 
 outputs.tf
