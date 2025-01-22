@@ -18,4 +18,3 @@ runcmd:
   - chmod 700 /home/bezumel/.ssh
   - sudo add-apt-repository ppa:deadsnakes/ppa -y
   - sudo apt-get update
-Применяем изменения
