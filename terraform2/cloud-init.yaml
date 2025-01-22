@@ -1,10 +1,9 @@
 #cloud-config
 users:
   - name: bezumel
-    passwd: "100497d"
     ssh_authorized_keys:
       - ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCxBkPm+s71oRBTWLAdWo20V6Q9RGykmOUQPmRhAniz+2uyJOoNGElLASvWSPrQsu3z2h3HOM52+zM+P67857lH8RGCc8jX0XSiQ280/uiBvh0fv4JJQMBSEd+gU1Nw0OCvz/dy7plw8X1I1cuvlp/q1LhZ83p0vK2r2NI4pIXBcnUETerEh9paKMxkYd+cz6AGkRVNrPW6K/o0zxGC6kkH2NZqqWMLU9MbB6t4ooHfpgUTCeKYuXEH+iJUk/F43wI1B9HOpJqEi2wvXDACAPHGKYtBk3w8PadZQv9lxrjA4DqHOra0h/+3Y3ijpeX/QfWfCZVxu6Dy+XM6D86dery3YPuIQBuv3Prt0eEanPLmYpgEAyPD4LnkwTmhfFDx2sdCWX2Qf37aqaepSVWzOKe9diF10u+0Jwo6lU3jJ5kRxcpmjTLor0/ojHwvU0HiXhJ94ZWEfcgMjlS0Kjo022hgAZVm4DBUM9vyg5OzW4b+N8FRS9b1khrgIXDdTVO8V6HZLaBVwKhU0ASbTyOx8FHpvjVzYo2StzWB9CarcuSHNImBcz+FySzxOwVcK6rj4qshx4mmxMzT87YOAphMPlODRfGUXva0ZihqXCxlJn428XybImZu0ywaXHI8P96+v8OVsqIm/eQ1VxwDBp1X68JlYIifnDwK1MxILQbKE047mQ== nemcev100497@mail.ru"
-    sudo: ALL=(ALL) NOPASSWD:ALL
+    sudo: ['bezumel ALL=(ALL) NOPASSWD:ALL']
     groups: sudo
     shell: /bin/bash
 package_update: true
@@ -14,12 +13,14 @@ packages:
   - nano
   - software-properties-common
 runcmd:
-  - mkdir -p /home/bezumel/.ssh
-  - chown -R bezumel:bezumel /home/bezumel/.ssh
-  - chmod 700 /home/bezumel/.ssh
+  - mkdir -p ~/.ssh
+  - chown -R bezumel:bezumel ~/.ssh
+  - chmod 700 ~/.ssh
   - echo "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCxBkPm+s71oRBTWLAdWo20V6Q9RGykmOUQPmRhAniz+2uyJOoNGElLASvWSPrQsu3z2h3HOM52+zM+P67857lH8RGCc8jX0XSiQ280/uiBvh0fv4JJQMBSEd+gU1Nw0OCvz/dy7plw8X1I1cuvlp/q1LhZ83p0vK2r2NI4pIXBcnUETerEh9paKMxkYd+cz6AGkRVNrPW6K/o0zxGC6kkH2NZqqWMLU9MbB6t4ooHfpgUTCeKYuXEH+iJUk/F43wI1B9HOpJqEi2wvXDACAPHGKYtBk3w8PadZQv9lxrjA4DqHOra0h/+3Y3ijpeX/QfWfCZVxu6Dy+XM6D86dery3YPuIQBuv3Prt0eEanPLmYpgEAyPD4LnkwTmhfFDx2sdCWX2Qf37aqaepSVWzOKe9diF10u+0Jwo6lU3jJ5kRxcpmjTLor0/ojHwvU0HiXhJ94ZWEfcgMjlS0Kjo022hgAZVm4DBUM9vyg5OzW4b+N8FRS9b1khrgIXDdTVO8V6HZLaBVwKhU0ASbTyOx8FHpvjVzYo2StzWB9CarcuSHNImBcz+FySzxOwVcK6rj4qshx4mmxMzT87YOAphMPlODRfGUXva0ZihqXCxlJn428XybImZu0ywaXHI8P96+v8OVsqIm/eQ1VxwDBp1X68JlYIifnDwK1MxILQbKE047mQ== nemcev100497@mail.ru" > /home/bezumel/.ssh/authorized_keys
-  - chmod 600 /home/bezumel/.ssh/authorized_keys
+  - chmod 600 ~/.ssh/authorized_keys
   - sudo add-apt-repository ppa:deadsnakes/ppa -y
   - sudo apt-get update
   - echo "PasswordAuthentication no" | sudo tee -a /etc/ssh/sshd_config
+  - echo "PubkeyAuthentication yes" | sudo tee -a /etc/ssh/sshd_config
+  - echo "AuthorizedKeysFile .ssh/authorized_keys" | sudo tee -a /etc/ssh/sshd_config
   - sudo systemctl restart ssh
