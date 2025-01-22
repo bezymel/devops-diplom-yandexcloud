@@ -1,0 +1,87 @@
+---
+- hosts: all
+  become: true
+  become_user: root
+  tasks:
+    - name: Update apt cache and install required packages
+      apt:
+        update_cache: yes
+        name:
+          - git
+          - python3
+          - python3-pip
+          - curl
+          - docker.io
+          - containerd
+        state: present
+
+    - name: Enable and start Docker
+      systemd:
+        name: docker
+        enabled: yes
+        state: started
+
+    - name: Clone kubespray repo
+      git:
+        repo: https://github.com/kubernetes-sigs/kubespray.git
+        dest: /opt/kubespray
+        version: release-{{ kubespray_version }}
+
+    - name: Copy inventory sample to customized inventory
+      copy:
+        src: /opt/kubespray/inventory/sample/inventory.yml
+        dest: /opt/kubespray/inventory/mycluster/inventory.yml
+
+    - name: Configure inventory for hosts
+      lineinfile:
+        path: /opt/kubespray/inventory/mycluster/inventory.yml
+        regexp: '^  {{ item.key }}'
+        line: "{{ item.key }}: {{ item.value }}"
+      with_items:
+        - { key: 'node1', value: 'ansible_host=89.169.142.213 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd1' }
+        - { key: 'node2', value: 'ansible_host=89.169.152.76 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd2' }
+        - { key: 'node3', value: 'ansible_host=158.160.87.118 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd3' }
+
+    - name: Install Kubernetes dependencies
+      apt:
+        name:
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: present
+
+    - name: Add Kubernetes apt key
+      command: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+
+    - name: Add Kubernetes repository
+      lineinfile:
+        path: /etc/apt/sources.list.d/kubernetes.list
+        line: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+      notify: Update apt cache
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Mark Kubernetes packages to hold
+      command: apt-mark hold kubelet kubeadm kubectl
+
+    - name: Initialize Kubernetes cluster
+      command: kubeadm init --pod-network-cidr=192.168.0.0/16
+      when: inventory_hostname == 'node1'
+
+    - name: Set kubeconfig for user
+      command: >
+        mkdir -p $HOME/.kube
+        && cp /etc/kubernetes/admin.conf $HOME/.kube/config
+        && chown $(id -u):$(id -g) $HOME/.kube/config
+      when: inventory_hostname == 'node1'
+
+    - name: Install Calico network plugin
+      command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      when: inventory_hostname == 'node1'
+
+    - name: Join worker nodes to the cluster
+      command: >
+        kubeadm join 89.169.142.213:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
+      when: inventory_hostname != 'node1'
