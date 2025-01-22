@@ -670,6 +670,23 @@ calico_rr
 ```  
 bezumel@compute:~/Diplom1/terraform/mycluster$ ansible-playbook -i /home/bezumel/Diplom1/terraform/mycluster/sample/inventory.ini cluster.yml -b -v
 ```
+```
+bezumel@compute:~/Diplom1/terraform/mycluster$ ansible-playbook -i /home/bezumel/Diplom1/terraform/mycluster/sample/inventory.ini cluster.yml -b -v
+No config file found; using defaults
+
+PLAY [all] ********************************************************************************************************************************************************************************************************
+
+TASK [Gathering Facts] ********************************************************************************************************************************************************************************************
+fatal: [node3]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: bezumel@158.160.87.118: Permission denied (publickey,password).", "unreachable": true}
+fatal: [node1]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: bezumel@89.169.142.213: Permission denied (publickey,password).", "unreachable": true}
+fatal: [node2]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: bezumel@89.169.152.76: Permission denied (publickey,password).", "unreachable": true}
+
+PLAY RECAP ********************************************************************************************************************************************************************************************************
+node1                      : ok=0    changed=0    unreachable=1    failed=0    skipped=0    rescued=0    ignored=0   
+node2                      : ok=0    changed=0    unreachable=1    failed=0    skipped=0    rescued=0    ignored=0   
+node3                      : ok=0    changed=0    unreachable=1    failed=0    skipped=0    rescued=0    ignored=0   
+```
+
   
 3. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
   а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях      
