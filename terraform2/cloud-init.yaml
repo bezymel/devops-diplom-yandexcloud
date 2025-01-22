@@ -1,0 +1,21 @@
+#cloud-config
+users:
+  - name: bezumel
+    ssh_authorized_keys:
+      - ssh-rsa <public_key>
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    groups: sudo
+    shell: /bin/bash
+package_update: true
+package_upgrade: true
+packages:
+  - nginx
+  - nano
+  - software-properties-common
+runcmd:
+  - mkdir -p /home/bezumel/.ssh
+  - chown -R bezumel:bezumel /home/bezumel/.ssh
+  - chmod 700 /home/bezumel/.ssh
+  - sudo add-apt-repository ppa:deadsnakes/ppa -y
+  - sudo apt-get update
+Применяем изменения
