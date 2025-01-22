@@ -279,6 +279,7 @@ terraform apply
 ![image](https://github.com/user-attachments/assets/7e2bad67-bab9-4b45-a7b3-e8ed7d304527)
 ![image](https://github.com/user-attachments/assets/8d2aaf11-a048-4ca7-95cd-54c4854124c7)
 ![image](https://github.com/user-attachments/assets/d6c9a20d-a76e-4593-ae61-df62462ffd20)
+![image](https://github.com/user-attachments/assets/3b7e1975-8b3f-49a4-8e14-9146b29555d0)
 
 
 Выполняем команду:
@@ -306,10 +307,219 @@ terraform destroy
 Это можно сделать двумя способами:
 
 1. Рекомендуемый вариант: самостоятельная установка Kubernetes кластера.  
-   а. При помощи Terraform подготовить как минимум 3 виртуальных машины Compute Cloud для создания Kubernetes-кластера. Тип виртуальной машины следует выбрать самостоятельно с учётом требовании к производительности и стоимости. Если в дальнейшем поймете, что необходимо сменить тип инстанса, используйте Terraform для внесения изменений.  
+   а. При помощи Terraform подготовить как минимум 3 виртуальных машины Compute Cloud для создания Kubernetes-кластера. Тип виртуальной машины следует выбрать самостоятельно с учётом требовании к производительности и стоимости. Если в дальнейшем поймете, что необходимо сменить тип инстанса, используйте Terraform для внесения изменений.
+
+  * Конфиграция control-plane ноды:
+
+```
+#Конфиграция control-plane ноды
+
+resource "yandex_vpc_subnet" "public_subnet" {
+  count = length(var.public_subnet_zones)
+  name  = "${var.public_subnet_name}-${var.public_subnet_zones[count.index]}"
+  v4_cidr_blocks = [
+    cidrsubnet(var.public_v4_cidr_blocks[0], 4, count.index)
+  ]
+  zone       = var.public_subnet_zones[count.index]
+  network_id = yandex_vpc_network.my_vpc.id
+}
+
+resource "yandex_compute_instance" "control-plane" {
+  name            = var.control_plane_name
+  platform_id     = var.platform
+  resources {
+    cores         = var.control_plane_core
+    memory        = var.control_plane_memory
+    core_fraction = var.control_plane_core_fraction
+  }
+
+  boot_disk {
+    initialize_params {
+      image_id = var.image_id
+      size     = var.control_plane_disk_size
+    }
+  }
+
+  scheduling_policy {
+    preemptible = var.scheduling_policy
+  }
+
+  network_interface {
+    subnet_id = yandex_vpc_subnet.public_subnet[0].id
+    nat       = var.nat
+  }
+
+  metadata = {
+    user-data = "${file("/home/bezumel/Diplom1/terraform/cloud-init.yaml")}"
+ }
+}
+```
+
+   * Переменные для control-plane ноды:
+
+```
+### control-plane node vars
+
+variable "control_plane_name" {
+  type        = string
+  default     = "control-plane"
+}
+
+variable "platform" {
+  type        = string
+  default     = "standard-v1"
+}
+
+variable "control_plane_core" {
+  type        = number
+  default     = "4"
+}
+
+variable "control_plane_memory" {
+  type        = number
+  default     = "8"
+}
+
+variable "control_plane_core_fraction" {
+  description = "guaranteed vCPU, for yandex cloud - 20, 50 or 100 "
+  type        = number
+  default     = "20"
+}
+
+variable "control_plane_disk_size" {
+  type        = number
+  default     = "50"
+}
+
+variable "image_id" {
+  type        = string
+  default     = "fd893ak78u3rh37q3ekn"
+}
+
+variable "scheduling_policy" {
+  type        = bool
+  default     = "true"
+}
+```
+
+   * Конфигурация worker нод:
+
+```
+#Конфигурация worker нод:
+
+resource "yandex_compute_instance" "worker" {
+  count           = var.worker_count
+  name            = "worker-node-${count.index + 1}"
+  platform_id     = var.worker_platform
+  zone = var.public_subnet_zones[count.index]
+  resources {
+    cores         = var.worker_cores
+    memory        = var.worker_memory
+    core_fraction = var.worker_core_fraction
+  }
+
+  boot_disk {
+    initialize_params {
+      image_id = var.image_id
+      size     = var.worker_disk_size
+    }
+  }
+
+    scheduling_policy {
+    preemptible = var.scheduling_policy
+  }
+
+  network_interface {
+    subnet_id = yandex_vpc_subnet.public_subnet[count.index].id
+    nat       = var.nat
+  }
+
+  metadata = {
+    user-data = "${file("/home/bezumel/Diplom1/terraform/cloud-init.yaml")}"
+ }
+}
+```
+
+   * Переменные для worker нод:
+
+```
+### worker nodes vars
+
+variable "worker_count" {
+  type        = number
+  default     = "2"
+}
+
+variable "worker_platform" {
+  type        = string
+  default     = "standard-v1"
+}
+
+variable "worker_cores" {
+  type        = number
+  default     = "4"
+}
+
+variable "worker_memory" {
+  type        = number
+  default     = "2"
+}
+
+variable "worker_core_fraction" {
+  description = "guaranteed vCPU, for yandex cloud - 20, 50 or 100 "
+  type        = number
+  default     = "20"
+}
+
+variable "worker_disk_size" {
+  type        = number
+  default     = "50"
+}
+
+variable "nat" {
+  type        = bool
+  default     = "true"
+}
+```
+
+   * Для всех виртуальных машин используется cloud-init.yaml следующей конфигурации:
+```
+#cloud-config
+users:
+  - name: bezumel
+    ssh_authorized_keys:
+      - ssh-rsa ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCxBkPm+s71oRBTWLAdWo20V6Q9RGykmOUQPmRhAniz+2uyJOoNGElLASvWSPrQsu3z2h3HOM52+zM+P67857lH8RGCc8jX0XSiQ280/uiBvh0fv4JJQMBSEd+gU1Nw0OCvz/dy7plw8X1I1cuvlp/q1LhZ83p0vK2r2NI4pIXBcnUETerEh9paKMxkYd+cz6AGkRVNrPW6K/o0zxGC6kkH2NZqqWMLU9MbB6t4ooHfpgUTCeKYuXEH+iJUk/F43wI1B9HOpJqEi2wvXDACAPHGKYtBk3w8PadZQv9lxrjA4DqHOra0h/+3Y3ijpeX/QfWfCZVxu6Dy+XM6D86dery3YPuIQBuv3Prt0eEanPLmYpgEAyPD4LnkwTmhfFDx2sdCWX2Qf37aqaepSVWzOKe9diF10u+0Jwo6lU3jJ5kRxcpmjTLor0/ojHwvU0HiXhJ94ZWEfcgMjlS0Kjo022hgAZVm4DBUM9vyg5OzW4b+N8FRS9b1khrgIXDdTVO8V6HZLaBVwKhU0ASbTyOx8FHpvjVzYo2StzWB9CarcuSHNImBcz+FySzxOwVcK6rj4qshx4mmxMzT87YOAphMPlODRfGUXva0ZihqXCxlJn428XybImZu0ywaXHI8P96+v8OVsqIm/eQ1VxwDBp1X68JlYIifnDwK1MxILQbKE047mQ== nemcev100497@mail.ru
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    groups: sudo
+    shell: /bin/bash
+package_update: true
+package_upgrade: true
+packages:
+  - nginx
+  - nano
+  - software-properties-common
+runcmd:
+  - mkdir -p /home/bezumel/.ssh
+  - chown -R bezumel:bezumel /home/bezumel/.ssh
+  - chmod 700 /home/bezumel/.ssh
+  - sudo add-apt-repository ppa:deadsnakes/ppa -y
+  - sudo apt-get update
+```
+  * Применяем изменения
+
+```
+terrafrom plan
+terraform apply
+```
+
+![image](https://github.com/user-attachments/assets/88e8e358-c5f7-4ce9-a08c-924d14cd5414)
+![image](https://github.com/user-attachments/assets/653e70a1-0638-468f-b686-fc3498676de9)
+
+
+
    б. Подготовить [ansible](https://www.ansible.com/) конфигурации, можно воспользоваться, например [Kubespray](https://kubernetes.io/docs/setup/production-environment/tools/kubespray/)  
    в. Задеплоить Kubernetes на подготовленные ранее инстансы, в случае нехватки каких-либо ресурсов вы всегда можете создать их при помощи Terraform.
-2. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
+3. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
   а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях      
   б. С помощью terraform resource для [kubernetes node group](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_node_group)
   
