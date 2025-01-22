@@ -518,7 +518,66 @@ terraform apply
 
 
    б. Подготовить [ansible](https://www.ansible.com/) конфигурации, можно воспользоваться, например [Kubespray](https://kubernetes.io/docs/setup/production-environment/tools/kubespray/)  
+
+   * Скачиваем репозиторий с Kubespray
+```
+git clone https://github.com/kubernetes-sigs/kubespray
+```
+   * Устанавливаем зависимости
+```
+python3.10 -m pip install --upgrade pip
+pip3 install -r requirements.txt
+```
+   * Копируем шаблон с inventory файлом
+```
+cp -rfp /home/bezumel/Diplom1/terraform/kubespray/inventory/sample/ /home/bezumel/Diplom1/terraform/mycluster/
+```
+  * Корректируем файл inventory.ini, где прописываем актуальные ip адреса виртуальных машин, развернутых в предвдущих пунктах, в качестве CRI будем использовать containerd, а запуск etcd будет осущуствляться на мастере.
+```
+# ## Configure 'ip' variable to bind kubernetes services on a
+# ## different ip than the default iface
+# ## We should set etcd_member_name for etcd cluster. The node that is not a etcd member do not need to set the value, or can set the empty string value.
+[all]
+node1 ansible_host=89.169.142.213   ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_pass= # ip=192.168.10.10  etcd_member_name=etcd1
+node2 ansible_host=89.169.152.76    ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_pass= # ip=192.168.10.6 etcd_member_name=etcd2
+node3 ansible_host=158.160.87.118   ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa ansible_ssh_pass= # ip=192.168.10.24 etcd_member_name=etcd3
+# node4 ansible_host=95.54.0.15   # ip=10.3.0.4 etcd_member_name=etcd4
+# node5 ansible_host=95.54.0.16   # ip=10.3.0.5 etcd_member_name=etcd5
+# node6 ansible_host=95.54.0.17   # ip=10.3.0.6 etcd_member_name=etcd6
+
+# ## configure a bastion host if your nodes are not directly reachable
+# [bastion]
+# bastion ansible_host=x.x.x.x ansible_user=some_user
+
+[kube_control_plane]
+node1
+# node2
+# node3
+
+[etcd]
+ node1
+# node2
+# node3
+
+[kube_node]
+node2
+node3
+# node4
+# node5
+# node6
+
+[calico_rr]
+
+[k8s_cluster:children]
+kube_control_plane
+kube_node
+calico_rr
+```  
    в. Задеплоить Kubernetes на подготовленные ранее инстансы, в случае нехватки каких-либо ресурсов вы всегда можете создать их при помощи Terraform.
+```  
+bezumel@compute:~/Diplom1/terraform/mycluster$ ansible-playbook -i /home/bezumel/Diplom1/terraform/mycluster/sample/inventory.ini cluster.yml -b -v
+```
+  
 3. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
   а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях      
   б. С помощью terraform resource для [kubernetes node group](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_node_group)
