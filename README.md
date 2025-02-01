@@ -744,6 +744,7 @@ bezumel@compute:~/Diplom1/terraform/mycluster$ ansible-playbook -i /home/bezumel
 Ожидаемый результат:
 
 1. Работоспособный Kubernetes кластер.
+   
    * Подключаемся к control-plane ноде
 ```
 ssh -l bezumel 51.250.77.49
