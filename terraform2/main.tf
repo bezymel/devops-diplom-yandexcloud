@@ -1,15 +1,5 @@
 #Конфиграция control-plane ноды
 
-resource "yandex_vpc_subnet" "public_subnet" {
-  count = length(var.public_subnet_zones)
-  name  = "${var.public_subnet_name}-${var.public_subnet_zones[count.index]}"
-  v4_cidr_blocks = [
-    cidrsubnet(var.public_v4_cidr_blocks[0], 4, count.index)
-  ]
-  zone       = var.public_subnet_zones[count.index]
-  network_id = yandex_vpc_network.my_vpc.id
-}
-
 resource "yandex_compute_instance" "control-plane" {
   name            = var.control_plane_name
   platform_id     = var.platform
@@ -36,8 +26,23 @@ resource "yandex_compute_instance" "control-plane" {
   }
 
   metadata = {
-    user-data = "${file("/home/bezumel/Diplom1/terraform/cloud-init.yaml")}"
- }
+    user-data = <<-EOF
+      #cloud-config
+      ssh_pwauth: true
+      users:
+        - name: bezumel
+          shell: /bin/bash
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+          ssh-authorized-keys:
+            - ${var.ssh_public_key}
+          passwd: ${var.bezumel_password}  # Задайте пароль для пользователя
+        - name: root
+          passwd: ${var.root_password}  # Задайте пароль для root
+      runcmd:
+        - echo 'bezumel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/bezumel
+        - chmod 440 /etc/sudoers.d/bezumel
+    EOF
+  }
 }
 
 #Конфигурация worker нод:
@@ -46,7 +51,7 @@ resource "yandex_compute_instance" "worker" {
   count           = var.worker_count
   name            = "worker-node-${count.index + 1}"
   platform_id     = var.worker_platform
-  zone = var.public_subnet_zones[count.index]
+  zone            = var.public_subnet_zones[count.index]
   resources {
     cores         = var.worker_cores
     memory        = var.worker_memory
@@ -60,7 +65,7 @@ resource "yandex_compute_instance" "worker" {
     }
   }
 
-    scheduling_policy {
+  scheduling_policy {
     preemptible = var.scheduling_policy
   }
 
@@ -70,6 +75,19 @@ resource "yandex_compute_instance" "worker" {
   }
 
   metadata = {
-    user-data = "${file("/home/bezumel/Diplom1/terraform/cloud-init.yaml")}"
- }
+    user-data = <<-EOF
+      #cloud-config
+      ssh_pwauth: true
+      users:
+        - name: bezumel
+          shell: /bin/bash
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+          ssh-authorized-keys:
+            - ${var.ssh_public_key}
+          passwd: ${var.bezumel_password}  # Задайте пароль для пользователя
+      runcmd:
+        - echo 'bezumel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/bezumel
+        - chmod 440 /etc/sudoers.d/bezumel
+    EOF
+  }
 }
