@@ -513,7 +513,7 @@ terraform apply
 ```
 
 ![image](https://github.com/user-attachments/assets/88e8e358-c5f7-4ce9-a08c-924d14cd5414)
-![image](https://github.com/user-attachments/assets/653e70a1-0638-468f-b686-fc3498676de9)
+![image](https://github.com/user-attachments/assets/b94ee2d3-69ed-4e06-b7ec-23720f5b8a24)
 
 
 
