@@ -405,13 +405,64 @@ variable "scheduling_policy" {
    * Конфигурация worker нод:
 
 ```
+#Конфиграция control-plane ноды
+
+resource "yandex_compute_instance" "control-plane" {
+  name            = var.control_plane_name
+  platform_id     = var.platform
+  resources {
+    cores         = var.control_plane_core
+    memory        = var.control_plane_memory
+    core_fraction = var.control_plane_core_fraction
+  }
+
+  boot_disk {
+    initialize_params {
+      image_id = var.image_id
+      size     = var.control_plane_disk_size
+    }
+  }
+
+  scheduling_policy {
+    preemptible = var.scheduling_policy
+  }
+
+  network_interface {
+    subnet_id = yandex_vpc_subnet.public_subnet[0].id
+    nat       = var.nat
+  }
+
+  metadata = {
+    user-data = <<-EOF
+      #cloud-config
+      ssh_pwauth: true
+      users:
+        - name: bezumel
+          shell: /bin/bash
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+          ssh-authorized-keys:
+            - ${var.ssh_public_key}
+          passwd: ${var.bezumel_password}  # Задайте пароль для пользователя
+        - name: root
+          passwd: ${var.root_password}  # Задайте пароль для root
+      runcmd:
+        - echo 'bezumel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/bezumel
+        - chmod 440 /etc/sudoers.d/bezumel
+    EOF
+  }
+}
+```
+
+   * Переменные для worker нод:
+
+```
 #Конфигурация worker нод:
 
 resource "yandex_compute_instance" "worker" {
   count           = var.worker_count
   name            = "worker-node-${count.index + 1}"
   platform_id     = var.worker_platform
-  zone = var.public_subnet_zones[count.index]
+  zone            = var.public_subnet_zones[count.index]
   resources {
     cores         = var.worker_cores
     memory        = var.worker_memory
@@ -425,7 +476,7 @@ resource "yandex_compute_instance" "worker" {
     }
   }
 
-    scheduling_policy {
+  scheduling_policy {
     preemptible = var.scheduling_policy
   }
 
@@ -435,50 +486,21 @@ resource "yandex_compute_instance" "worker" {
   }
 
   metadata = {
-    user-data = "${file("/home/bezumel/Diplom1/terraform/cloud-init.yaml")}"
- }
-}
-```
-
-   * Переменные для worker нод:
-
-```
-### worker nodes vars
-
-variable "worker_count" {
-  type        = number
-  default     = "2"
-}
-
-variable "worker_platform" {
-  type        = string
-  default     = "standard-v1"
-}
-
-variable "worker_cores" {
-  type        = number
-  default     = "4"
-}
-
-variable "worker_memory" {
-  type        = number
-  default     = "2"
-}
-
-variable "worker_core_fraction" {
-  description = "guaranteed vCPU, for yandex cloud - 20, 50 or 100 "
-  type        = number
-  default     = "20"
-}
-
-variable "worker_disk_size" {
-  type        = number
-  default     = "50"
-}
-
-variable "nat" {
-  type        = bool
-  default     = "true"
+    user-data = <<-EOF
+      #cloud-config
+      ssh_pwauth: true
+      users:
+        - name: bezumel
+          shell: /bin/bash
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+          ssh-authorized-keys:
+            - ${var.ssh_public_key}
+          passwd: ${var.bezumel_password}  # Задайте пароль для пользователя
+      runcmd:
+        - echo 'bezumel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/bezumel
+        - chmod 440 /etc/sudoers.d/bezumel
+    EOF
+  }
 }
 ```
 
@@ -488,7 +510,7 @@ variable "nat" {
 users:
   - name: bezumel
     ssh_authorized_keys:
-      - ssh-rsa <public_key>
+      - ssh-rsa "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCxBkPm+s71oRBTWLAdWo20V6Q9RGykmOUQPmRhAniz+2uyJOoNGElLASvWSPrQsu3z2h3HOM52+zM+P67857lH8RGCc8jX0XSiQ280/uiBvh0fv4JJQMBSEd+gU1Nw0OCvz/dy7plw8X1I1cuvlp/q1LhZ83p0vK2r2NI4pIXBcnUETerEh9paKMxkYd+cz6AGkRVNrPW6K/o0zxGC6kkH2NZqqWMLU9MbB6t4ooHfpgUTCeKYuXEH+iJUk/F43wI1B9HOpJqEi2wvXDACAPHGKYtBk3w8PadZQv9lxrjA4DqHOra0h/+3Y3ijpeX/QfWfCZVxu6Dy+XM6D86dery3YPuIQBuv3Prt0eEanPLmYpgEAyPD4LnkwTmhfFDx2sdCWX2Qf37aqaepSVWzOKe9diF10u+0Jwo6lU3jJ5kRxcpmjTLor0/ojHwvU0HiXhJ94ZWEfcgMjlS0Kjo022hgAZVm4DBUM9vyg5OzW4b+N8FRS9b1khrgIXDdTVO8V6HZLaBVwKhU0ASbTyOx8FHpvjVzYo2StzWB9CarcuSHNImBcz+FySzxOwVcK6rj4qshx4mmxMzT87YOAphMPlODRfGUXva0ZihqXCxlJn428XybImZu0ywaXHI8P96+v8OVsqIm/eQ1VxwDBp1X68JlYIifnDwK1MxILQbKE047mQ== nemcev100497@mail.ru"
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     groups: sudo
     shell: /bin/bash
@@ -498,12 +520,6 @@ packages:
   - nginx
   - nano
   - software-properties-common
-runcmd:
-  - mkdir -p /home/bezumel/.ssh
-  - chown -R bezumel:bezumel /home/bezumel/.ssh
-  - chmod 700 /home/bezumel/.ssh
-  - sudo add-apt-repository ppa:deadsnakes/ppa -y
-  - sudo apt-get update
 ```
   * Применяем изменения
 
