@@ -33,7 +33,7 @@ variable "control_plane_disk_size" {
 
 variable "image_id" {
   type        = string
-  default     = "fd893ak78u3rh37q3ekn"
+  default     = "fd8jnll1ou4fv2gil3rv"
 }
 
 variable "scheduling_policy" {
@@ -77,4 +77,16 @@ variable "worker_disk_size" {
 variable "nat" {
   type        = bool
   default     = "true"
+}
+
+variable "bezumel_password" {
+  description = "Пароль для пользователя bezumel"
+  type        = string
+  sensitive   = true
+}
+
+variable "root_password" {
+  description = "Пароль для root пользователя"
+  type        = string
+  sensitive   = true
 }
