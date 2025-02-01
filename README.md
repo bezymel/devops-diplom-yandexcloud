@@ -745,7 +745,11 @@ bezumel@compute:~/Diplom1/terraform/mycluster$ ansible-playbook -i /home/bezumel
 
 1. Работоспособный Kubernetes кластер.
 2. В файле `~/.kube/config` находятся данные для доступа к кластеру.
-3. Команда `kubectl get pods --all-namespaces` отрабатывает без ошибок.
+   ![image](https://github.com/user-attachments/assets/19bd251e-fb5d-4a12-b0af-9ec5a2e3dbb9)
+
+4. Команда `kubectl get pods --all-namespaces` отрабатывает без ошибок.
+   ![image](https://github.com/user-attachments/assets/c5f60224-94bb-4b7c-95c9-c52c822ac89b)
+
 
 ---
 ### Создание тестового приложения
