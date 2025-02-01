@@ -65,9 +65,9 @@
         line: "{{ item.key }}: {{ item.value }}"
 
       loop: 
-        - { key: 'node1', value: 'ansible_host=89.169.140.191 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd1' }
-        - { key: 'node2', value: 'ansible_host=158.160.38.2  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd2' }
-        - { key: 'node3', value: 'ansible_host=158.160.64.246  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd3' }
+        - { key: 'node1', value: 'ansible_host=51.250.77.49 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd1' }
+        - { key: 'node2', value: 'ansible_host=89.169.150.194  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd2' }
+        - { key: 'node3', value: 'ansible_host=84.201.176.206  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd3' }
 
 
 
