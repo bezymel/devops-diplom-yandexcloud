@@ -537,8 +537,7 @@ terraform apply
 ```
 
 ![image](https://github.com/user-attachments/assets/88e8e358-c5f7-4ce9-a08c-924d14cd5414)
-![image](https://github.com/user-attachments/assets/b94ee2d3-69ed-4e06-b7ec-23720f5b8a24)
-
+![image](https://github.com/user-attachments/assets/4b55a4e3-43c3-44b4-8677-7af6270cb6ae)
 
 
    б. Подготовить [ansible](https://www.ansible.com/) конфигурации, можно воспользоваться, например [Kubespray](https://kubernetes.io/docs/setup/production-environment/tools/kubespray/)  
@@ -562,9 +561,9 @@ cp -rfp /home/bezumel/Diplom1/terraform/kubespray/inventory/sample/ /home/bezume
 # ## different ip than the default iface
 # ## We should set etcd_member_name for etcd cluster. The node that is not a etcd member do not need to set the value, or can set the empty string value.
 [all]
-node1 ansible_host=89.169.140.191 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.9  etcd_member_name=etcd1
-node2 ansible_host=158.160.38.2  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.4 etcd_member_name=etcd2
-node3 ansible_host=158.160.64.246  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.28 etcd_member_name=etcd3
+node1 ansible_host=51.250.77.49 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.8  etcd_member_name=etcd1
+node2 ansible_host=89.169.150.194  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.12 etcd_member_name=etcd2
+node3 ansible_host=84.201.176.206  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.26 etcd_member_name=etcd3
 # node4 ansible_host=95.54.0.15   # ip=10.3.0.4 etcd_member_name=etcd4
 # node5 ansible_host=95.54.0.16   # ip=10.3.0.5 etcd_member_name=etcd5
 # node6 ansible_host=95.54.0.17   # ip=10.3.0.6 etcd_member_name=etcd6
@@ -668,9 +667,9 @@ calico_rr
         line: "{{ item.key }}: {{ item.value }}"
 
       loop: 
-        - { key: 'node1', value: 'ansible_host=89.169.140.191 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd1' }
-        - { key: 'node2', value: 'ansible_host=158.160.38.2  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd2' }
-        - { key: 'node3', value: 'ansible_host=158.160.64.246  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd3' }
+        - { key: 'node1', value: 'ansible_host=51.250.77.49 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd1' }
+        - { key: 'node2', value: 'ansible_host=89.169.150.194  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd2' }
+        - { key: 'node3', value: 'ansible_host=84.201.176.206  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd3' }
 
 
 
@@ -731,7 +730,6 @@ calico_rr
       command: >
         kubeadm join {{ hostvars['node1']['ansible_default_ipv4']['address'] }}:6443 --token {{ kubeadm_init_result.stdout_lines[0] }} --discovery-token-ca-cert-hash sha256:{{ kubeadm_init_result.stdout_lines[1] }}
       when: inventory_hostname != 'node1'
-
 ```
 
    в. Задеплоить Kubernetes на подготовленные ранее инстансы, в случае нехватки каких-либо ресурсов вы всегда можете создать их при помощи Terraform.
