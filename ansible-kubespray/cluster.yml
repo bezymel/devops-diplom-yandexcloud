@@ -3,7 +3,7 @@
   become: true
   become_user: root
   tasks:
-    - name: Update apt cache and install required packages
+    - name: Update apt cache and install required packages #Обновление кеша APT и установка необходимых пакетов
       apt:
         update_cache: yes
         name:
@@ -15,73 +15,90 @@
           - containerd
         state: present
 
-    - name: Enable and start Docker
+    - name: Enable and start Docker #Включение и запуск Docker
       systemd:
         name: docker
         enabled: yes
         state: started
 
-    - name: Clone kubespray repo
+    - name: Create custom inventory directory #Создание директории
+      file:
+        path: ~/diplom
+        state: directory
+
+    - name: Clone kubespray repo #Клонирование репозитория Kubespray
       git:
         repo: https://github.com/kubernetes-sigs/kubespray.git
-        dest: /opt/kubespray
-        version: release-{{ kubespray_version }}
+        dest: ~/diplom
+        version: 'master' 
+        force: yes  # Если хотите перезаписать существующие изменения
 
-    - name: Copy inventory sample to customized inventory
+    - name: Create custom inventory directory #Создание директории
+      file:
+        path: ~/mycluster
+        state: directory
+
+    - name: Copy inventory sample to customized inventory #Копирование образца инвентаря
       copy:
-        src: /opt/kubespray/inventory/sample/inventory.yml
-        dest: /opt/kubespray/inventory/mycluster/inventory.yml
+        src: ~/diplom/inventory/
+        dest: ~/mycluster/
+        remote_src: yes
+        mode: '0755'
 
-    - name: Configure inventory for hosts
+    - name: Configure inventory for hosts #Настройка инвентаря для хостов
+      become: yes
       lineinfile:
-        path: /opt/kubespray/inventory/mycluster/inventory.yml
+        path: ~/mycluster/sample/inventory.ini
         regexp: '^  {{ item.key }}'
         line: "{{ item.key }}: {{ item.value }}"
-      with_items:
-        - { key: 'node1', value: 'ansible_host=89.169.142.213 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd1' }
-        - { key: 'node2', value: 'ansible_host=89.169.152.76 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd2' }
-        - { key: 'node3', value: 'ansible_host=158.160.87.118 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd3' }
 
-    - name: Install Kubernetes dependencies
+      loop: 
+        - { key: 'node1', value: 'ansible_host=89.169.140.191 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd1' }
+        - { key: 'node2', value: 'ansible_host=158.160.38.2  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd2' }
+        - { key: 'node3', value: 'ansible_host=158.160.64.246  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa etcd_member_name=etcd3' }
+
+    - name: Install Kubernetes dependencies # Установка зависимостей Kubernetes
       apt:
-        name:
-          - kubelet
-          - kubeadm
-          - kubectl
+      name:
+        - kubelet
+        - kubeadm
+        - kubectl
+      state: present
+      update_cache: yes
+
+    - name: Add Kubernetes apt key # Добавление GPG ключа Kubernetes
+      apt_key:
+        url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
         state: present
 
-    - name: Add Kubernetes apt key
-      command: curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+    - name: Add Kubernetes repository # Добавление репозитория Kubernetes
+      apt_repository:
+        repo: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+        state: present
 
-    - name: Add Kubernetes repository
-      lineinfile:
-        path: /etc/apt/sources.list.d/kubernetes.list
-        line: "deb https://apt.kubernetes.io/ kubernetes-xenial main"
-      notify: Update apt cache
-
-    - name: Update apt cache
-      apt:
-        update_cache: yes
-
-    - name: Mark Kubernetes packages to hold
+    - name: Mark Kubernetes packages to hold # Пометка пакетов Kubernetes как заблокированных
       command: apt-mark hold kubelet kubeadm kubectl
 
-    - name: Initialize Kubernetes cluster
+    - name: Initialize Kubernetes cluster # Инициализация кластера Kubernetes
       command: kubeadm init --pod-network-cidr=192.168.0.0/16
       when: inventory_hostname == 'node1'
+      register: kubeadm_init_result
+      ignore_errors: yes
 
-    - name: Set kubeconfig for user
-      command: >
-        mkdir -p $HOME/.kube
-        && cp /etc/kubernetes/admin.conf $HOME/.kube/config
-        && chown $(id -u):$(id -g) $HOME/.kube/config
+    - name: Set kubeconfig for user # Настройка kubeconfig для пользователя
+      shell: |
+      mkdir -p $HOME/.kube
+        cp /etc/kubernetes/admin.conf $HOME/.kube/config
+        chown $(id -u):$(id -g) $HOME/.kube/config
       when: inventory_hostname == 'node1'
+      when: kubeadm_init_result is succeeded
 
-    - name: Install Calico network plugin
+    - name: Install Calico network plugin # Установка плагина сети Calico
       command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
       when: inventory_hostname == 'node1'
+      when: kubeadm_init_result is succeeded
 
-    - name: Join worker nodes to the cluster
+    - name: Join worker nodes to the cluster # Присоединение рабочих узлов к кластеру
       command: >
-        kubeadm join 89.169.142.213:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
-      when: inventory_hostname != 'node1'
+        kubeadm join {{ hostvars['node1']['ansible_default_ipv4']['address'] }}:6443 --token {{ kubeadm_init_result.stdout_lines[0] }} --discovery-token-ca-cert-hash sha256:{{ kubeadm_init_result.stdout_lines[1] }}
+      when: inventory_hostname != 'node1'   
