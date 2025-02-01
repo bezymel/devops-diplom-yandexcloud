@@ -521,6 +521,14 @@ packages:
   - nano
   - software-properties-common
 ```
+
+  * Прописываем пароли если нужно.
+  
+```
+export TF_VAR_bezumel_password="ваш_пароль"
+bezumel@compute:~/Diplom1/terraform$ export TF_VAR_root_password="ваш_пароль"
+```
+
   * Применяем изменения
 
 ```
