@@ -91,3 +91,4 @@ resource "yandex_compute_instance" "worker" {
     EOF
   }
 }
+
