@@ -738,7 +738,78 @@ bezumel@compute:~/Diplom1/terraform/mycluster$ ansible-playbook -i /home/bezumel
 ```
   
 3. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
-  а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях      
+  а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях
+
+   * Для начала создадим кластер
+
+main.tf
+```
+#Создаем VPC с подсетями в разных зонах доступности
+
+resource "yandex_vpc_network" "my_vpc" {
+  name = var.VPC_name
+}
+
+resource "yandex_vpc_subnet" "public_subnet" {
+  count = length(var.public_subnet_zones)
+  name  = "${var.public_subnet_name}-${var.public_subnet_zones[count.index]}"
+  v4_cidr_blocks = [
+    cidrsubnet(var.public_v4_cidr_blocks[0], 4, count.index)
+  ]
+  zone       = var.public_subnet_zones[count.index]
+  network_id = var.yandex_vpc_network
+}
+
+#Создание кластера
+
+resource "yandex_kubernetes_cluster" "example" {
+ network_id = var.yandex_vpc_network
+ master {
+   master_location {
+     zone      = var.public-ru_subnet_zones
+   }
+ }
+ service_account_id      = yandex_iam_service_account.ww.id
+ node_service_account_id = yandex_iam_service_account.ww.id
+   depends_on = [
+     yandex_resourcemanager_folder_iam_member.editor,
+     yandex_resourcemanager_folder_iam_member.images-puller
+   ]
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "editor" {
+ # Сервисному аккаунту назначается роль "editor".
+ folder_id = var.folder_id
+ role      = "editor"
+ member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "images-puller" {
+ # Сервисному аккаунту назначается роль "container-registry.images.puller".
+ folder_id = var.folder_id
+ role      = "container-registry.images.puller"
+ member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+}
+```
+
+variables.tf
+```
+variable "public-ru_subnet_zones" {
+  type    = string
+  default = "ru-central1-a"
+}
+
+variable "yandex_vpc_network" {
+  type    = string
+  default = "enpg8eb9p7oonpva34g3"
+}
+```
+
+![image](https://github.com/user-attachments/assets/f825f956-5e08-447d-975f-4a96bdc57b09)
+![image](https://github.com/user-attachments/assets/37ad2520-b1c4-4f8a-8887-64ba8732a076)
+![image](https://github.com/user-attachments/assets/30b21ef8-b029-46b8-8dfc-35fe5b1ce42b)
+
+
   б. С помощью terraform resource для [kubernetes node group](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_node_group)
   
 Ожидаемый результат:
