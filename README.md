@@ -300,18 +300,9 @@ terraform destroy
 ```
 #Конфиграция control-plane ноды
 
-resource "yandex_vpc_subnet" "public_subnet" {
-  count = length(var.public_subnet_zones)
-  name  = "${var.public_subnet_name}-${var.public_subnet_zones[count.index]}"
-  v4_cidr_blocks = [
-    cidrsubnet(var.public_v4_cidr_blocks[0], 4, count.index)
-  ]
-  zone       = var.public_subnet_zones[count.index]
-  network_id = yandex_vpc_network.my_vpc.id
-}
-
 resource "yandex_compute_instance" "control-plane" {
   name            = var.control_plane_name
+  zone            = "ru-central1-a"
   platform_id     = var.platform
   resources {
     cores         = var.control_plane_core
@@ -331,13 +322,28 @@ resource "yandex_compute_instance" "control-plane" {
   }
 
   network_interface {
-    subnet_id = yandex_vpc_subnet.public_subnet[0].id
-    nat       = var.nat
+    subnet_id = var.mysubnet-a  # Используем первый элемент списка
+    nat       = var.nat                      # Включите NAT, если это необходимо
   }
 
   metadata = {
-    user-data = "${file("/home/bezumel/Diplom1/terraform/cloud-init.yaml")}"
- }
+    user-data = <<-EOF
+      #cloud-config
+      ssh_pwauth: true
+      users:
+        - name: bezumel
+          shell: /bin/bash
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+          ssh-authorized-keys:
+            - ${var.ssh_public_key}
+          passwd: ${var.bezumel_password}  # Задайте пароль для пользователя
+        - name: root
+          passwd: ${var.root_password}  # Задайте пароль для root
+      runcmd:
+        - echo 'bezumel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/bezumel
+        - chmod 440 /etc/sudoers.d/bezumel
+    EOF
+  }
 }
 ```
 
@@ -386,6 +392,12 @@ variable "scheduling_policy" {
   type        = bool
   default     = "true"
 }
+
+variable "mysubnet-a" {
+  description = "Пароль для пользователя bezumel"
+  type        = string
+  default     = "e9bc77gbvrrl1fhngoer"
+}
 ```
 
    * Конфигурация worker нод:
@@ -393,11 +405,10 @@ variable "scheduling_policy" {
 ```
 #Конфигурация worker нод:
 
-resource "yandex_compute_instance" "worker" {
-  count           = var.worker_count
-  name            = "worker-node-${count.index + 1}"
+resource "yandex_compute_instance" "worker_1" {
+  name            = "worker-node-1"
   platform_id     = var.worker_platform
-  zone            = var.public_subnet_zones[count.index]
+  zone            = "ru-central1-b"
   resources {
     cores         = var.worker_cores
     memory        = var.worker_memory
@@ -416,7 +427,51 @@ resource "yandex_compute_instance" "worker" {
   }
 
   network_interface {
-    subnet_id = yandex_vpc_subnet.public_subnet[count.index].id
+    subnet_id = var.mysubnet-b
+    nat       = var.nat
+  }
+
+  metadata = {
+    user-data = <<-EOF
+      #cloud-config
+      ssh_pwauth: true
+      users:
+        - name: bezumel
+          shell: /bin/bash
+          sudo: ['ALL=(ALL) NOPASSWD:ALL']
+          ssh-authorized-keys:
+            - ${var.ssh_public_key}
+          passwd: ${var.bezumel_password}  # Задайте пароль для пользователя
+      runcmd:
+        - echo 'bezumel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/bezumel
+        - chmod 440 /etc/sudoers.d/bezumel
+    EOF
+  }
+}
+
+resource "yandex_compute_instance" "worker_2" {
+  name            = "worker-node-2"
+  platform_id     = var.worker_platform2
+  zone            = "ru-central1-d"
+  resources {
+    cores         = var.worker_cores
+    memory        = var.worker_memory
+    core_fraction = var.worker_core_fraction
+  }
+
+  boot_disk {
+    initialize_params {
+      image_id = var.image_id
+      size     = var.worker_disk_size
+    }
+  }
+
+  scheduling_policy {
+    preemptible = var.scheduling_policy
+  }
+
+  network_interface {
+    subnet_id = var.mysubnet-d
     nat       = var.nat
   }
 
@@ -443,11 +498,6 @@ resource "yandex_compute_instance" "worker" {
 
 ```
 ### worker nodes vars
-
-variable "worker_count" {
-  type        = number
-  default     = "2"
-}
 
 variable "worker_platform" {
   type        = string
@@ -490,6 +540,24 @@ variable "root_password" {
   description = "Пароль для root пользователя"
   type        = string
   sensitive   = true
+}
+
+variable "mysubnet-b" {
+  description = "Пароль для пользователя bezumel"
+  type        = string
+  default     = "e2log9l8u5hprmrkip8n"
+}
+
+variable "mysubnet-d" {
+  description = "Пароль для пользователя bezumel"
+  type        = string
+  default     = "fl8c1m3119ohhc4mjjl9"
+}
+
+
+variable "worker_platform2" {
+  type        = string
+  default     = "standard-v2"
 }
 ```
 
