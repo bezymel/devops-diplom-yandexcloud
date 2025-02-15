@@ -265,11 +265,12 @@ variable "VPC_name" {
 terraform apply
 ```
 
-![image](https://github.com/user-attachments/assets/6515cf78-8555-4203-90c7-950360f5c2a3)
-![image](https://github.com/user-attachments/assets/7e2bad67-bab9-4b45-a7b3-e8ed7d304527)
+![image](https://github.com/user-attachments/assets/2aa62ca0-c772-44e3-a6a0-bd519c586518)
+![image](https://github.com/user-attachments/assets/573d01bb-8a89-4df5-aa37-06b56d57ed49)
 ![image](https://github.com/user-attachments/assets/8d2aaf11-a048-4ca7-95cd-54c4854124c7)
-![image](https://github.com/user-attachments/assets/d6c9a20d-a76e-4593-ae61-df62462ffd20)
-![image](https://github.com/user-attachments/assets/3b7e1975-8b3f-49a4-8e14-9146b29555d0)
+![image](https://github.com/user-attachments/assets/b43fce3e-745d-452b-bd4d-c9029a35d649)
+![image](https://github.com/user-attachments/assets/f6b2c73b-4475-4ea2-bd07-1ac11edd59ed)
+
 
 
 Выполняем команду:
