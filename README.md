@@ -642,6 +642,71 @@ resource "yandex_vpc_security_group" "regional-k8s-sg" {
 
 variables.tf
 ```
+### cloud vars
+
+variable "folder_id" {
+  type        = string
+  description = "folder_id"
+}
+
+variable "default_zone" {
+  description = "Availability zone for the instances"
+  type        = string
+  default     = "ru-central1-a"
+}
+
+variable "token" {
+  type        = string
+  description = "OAuth-token; https://cloud.yandex.ru/docs/iam/concepts/authorization/oauth-token"
+}
+
+variable "cloud_id" {
+  type        = string
+  description = "https://cloud.yandex.ru/docs/resource-manager/operations/cloud/get-id"
+}
+
+variable "ww_name" {
+  description = "Service account name"
+  type        = string
+  default     = "ww"
+}
+
+### vpc vars
+
+variable "VPC_name" {
+  type        = string
+  default     = "my-vpc"
+}
+
+### subnet vars
+
+variable "public_subnet_name" {
+  type        = string
+  default     = "public"
+}
+
+variable "public_v4_cidr_blocks" {
+  type        = list(string)
+  default     = ["192.168.10.0/24"]
+}
+
+variable "subnet_zone" {
+  type        = string
+  default     = "ru-central1"
+}
+
+variable "public_subnet_zones" {
+  type    = list(string)
+  default = ["ru-central1-a", "ru-central1-b",  "ru-central1-d"]
+}
+
+#SSH-key
+
+variable "ssh_public_key" {
+  description = "The public SSH key for accessing the instance."
+  type        = string
+}
+
 variable "public-ru_subnet_zones" {
   type    = string
   default = "ru-central1-a"
@@ -651,6 +716,17 @@ variable "yandex_vpc_network" {
   type    = string
   default = "enpg8eb9p7oonpva34g3"
 }
+
+variable "regional-k8s-sg" {
+  type    = string
+  default = "enperr0p1ei20fl0cm9h"
+}
+
+variable "my-bucket-encryption-key" {
+  type    = string
+  default = "abjdrrn2ov80f23m8j5n"
+}
+
 ```
 
 ![image](https://github.com/user-attachments/assets/318b1f16-e682-4d1f-8e17-fde0f0f2ca0d)
