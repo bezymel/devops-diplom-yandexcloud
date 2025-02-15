@@ -295,6 +295,11 @@ terraform destroy
 
 На этом этапе необходимо создать [Kubernetes](https://kubernetes.io/ru/docs/concepts/overview/what-is-kubernetes/) кластер на базе предварительно созданной инфраструктуры.   Требуется обеспечить доступ к ресурсам из Интернета.
 
+3. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
+  а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях
+
+   * Для начала создадим кластер
+
   * Конфиграция control-plane ноды:
 
 ```
@@ -561,14 +566,6 @@ variable "worker_platform2" {
 }
 ```
 
-
-
-  
-3. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
-  а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях
-
-   * Для начала создадим кластер
-
 main.tf
 ```
 #Создаем VPC с подсетями в разных зонах доступности
@@ -779,8 +776,9 @@ variable "my-bucket-encryption-key" {
 }
 
 ```
-
+![image](https://github.com/user-attachments/assets/9ae0108e-a1f1-4b82-8c23-74fc9d234924)
 ![image](https://github.com/user-attachments/assets/318b1f16-e682-4d1f-8e17-fde0f0f2ca0d)
+![image](https://github.com/user-attachments/assets/1973d194-6cc4-429d-8698-24892b2567e7)
 
 
 
