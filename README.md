@@ -225,14 +225,25 @@ resource "yandex_vpc_network" "my_vpc" {
   name = var.VPC_name
 }
 
-resource "yandex_vpc_subnet" "public_subnet" {
-  count = length(var.public_subnet_zones)
-  name  = "${var.public_subnet_name}-${var.public_subnet_zones[count.index]}"
-  v4_cidr_blocks = [
-    cidrsubnet(var.public_v4_cidr_blocks[0], 4, count.index)
-  ]
-  zone       = var.public_subnet_zones[count.index]
-  network_id = yandex_vpc_network.my_vpc.id
+resource "yandex_vpc_subnet" "mysubnet-a" {
+  name = "mysubnet-a"
+  v4_cidr_blocks = ["10.5.0.0/16"]
+  zone           = "ru-central1-a"
+  network_id     = var.yandex_vpc_network
+}
+
+resource "yandex_vpc_subnet" "mysubnet-b" {
+  name = "mysubnet-b"
+  v4_cidr_blocks = ["10.6.0.0/16"]
+  zone           = "ru-central1-b"
+  network_id     = var.yandex_vpc_network
+}
+
+resource "yandex_vpc_subnet" "mysubnet-d" {
+  name = "mysubnet-d"
+  v4_cidr_blocks = ["10.7.0.0/16"]
+  zone           = "ru-central1-d"
+  network_id     = var.yandex_vpc_network
 }
 ```
 
