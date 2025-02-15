@@ -740,45 +740,137 @@ resource "yandex_vpc_network" "my_vpc" {
   name = var.VPC_name
 }
 
-resource "yandex_vpc_subnet" "public_subnet" {
-  count = length(var.public_subnet_zones)
-  name  = "${var.public_subnet_name}-${var.public_subnet_zones[count.index]}"
-  v4_cidr_blocks = [
-    cidrsubnet(var.public_v4_cidr_blocks[0], 4, count.index)
-  ]
-  zone       = var.public_subnet_zones[count.index]
-  network_id = var.yandex_vpc_network
+resource "yandex_vpc_subnet" "mysubnet-a" {
+  name = "mysubnet-a"
+  v4_cidr_blocks = ["10.5.0.0/16"]
+  zone           = "ru-central1-a"
+  network_id     = var.yandex_vpc_network
 }
+
+resource "yandex_vpc_subnet" "mysubnet-b" {
+  name = "mysubnet-b"
+  v4_cidr_blocks = ["10.6.0.0/16"]
+  zone           = "ru-central1-b"
+  network_id     = var.yandex_vpc_network
+}
+
+resource "yandex_vpc_subnet" "mysubnet-d" {
+  name = "mysubnet-d"
+  v4_cidr_blocks = ["10.7.0.0/16"]
+  zone           = "ru-central1-d"
+  network_id     = var.yandex_vpc_network
+}
+
 
 #Создание кластера
 
-resource "yandex_kubernetes_cluster" "example" {
- network_id = var.yandex_vpc_network
- master {
-   master_location {
-     zone      = var.public-ru_subnet_zones
-   }
- }
- service_account_id      = yandex_iam_service_account.ww.id
- node_service_account_id = yandex_iam_service_account.ww.id
-   depends_on = [
-     yandex_resourcemanager_folder_iam_member.editor,
-     yandex_resourcemanager_folder_iam_member.images-puller
-   ]
+locals {
+  folder_id   = var.folder_id
 }
 
-resource "yandex_resourcemanager_folder_iam_member" "editor" {
- # Сервисному аккаунту назначается роль "editor".
- folder_id = var.folder_id
- role      = "editor"
- member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+resource "yandex_kubernetes_cluster" "k8s-regional" {
+  name = "k8s-regional"
+  network_id = var.yandex_vpc_network
+  master {
+    master_location {
+      zone      = "ru-central1-a"
+      subnet_id = yandex_vpc_subnet.mysubnet-a.id
+    }
+    master_location {
+      zone      = "ru-central1-b"
+      subnet_id = yandex_vpc_subnet.mysubnet-b.id
+    }
+    master_location {
+      zone      = "ru-central1-d"
+      subnet_id = yandex_vpc_subnet.mysubnet-d.id
+    }
+    security_group_ids = [yandex_vpc_security_group.regional-k8s-sg.id]
+  }
+  service_account_id      = yandex_iam_service_account.ww.id
+  node_service_account_id = yandex_iam_service_account.ww.id
+  depends_on = [
+    yandex_resourcemanager_folder_iam_member.k8s-clusters-agent,
+    yandex_resourcemanager_folder_iam_member.vpc-public-admin,
+    yandex_resourcemanager_folder_iam_member.images-puller,
+    yandex_resourcemanager_folder_iam_member.encrypterDecrypter
+  ]
+  kms_provider {
+    key_id = var.my-bucket-encryption-key
+  }
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "k8s-clusters-agent" {
+  # Сервисному аккаунту назначается роль "k8s.clusters.agent".
+  folder_id = local.folder_id
+  role      = "k8s.clusters.agent"
+  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "vpc-public-admin" {
+  # Сервисному аккаунту назначается роль "vpc.publicAdmin".
+  folder_id = local.folder_id
+  role      = "vpc.publicAdmin"
+  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
 }
 
 resource "yandex_resourcemanager_folder_iam_member" "images-puller" {
- # Сервисному аккаунту назначается роль "container-registry.images.puller".
- folder_id = var.folder_id
- role      = "container-registry.images.puller"
- member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+  # Сервисному аккаунту назначается роль "container-registry.images.puller".
+  folder_id = local.folder_id
+  role      = "container-registry.images.puller"
+  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+}
+
+resource "yandex_resourcemanager_folder_iam_member" "encrypterDecrypter" {
+  # Сервисному аккаунту назначается роль "kms.keys.encrypterDecrypter".
+  folder_id = local.folder_id
+  role      = "kms.keys.encrypterDecrypter"
+  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
+}
+
+resource "yandex_kms_symmetric_key" "kms-key" {
+  # Ключ Yandex Key Management Service для шифрования важной информации, такой как пароли, OAuth-токены и SSH-ключи.
+  name              = "kms-key"
+  default_algorithm = "AES_128"
+  rotation_period   = "8760h" # 1 год.
+}
+
+resource "yandex_vpc_security_group" "regional-k8s-sg" {
+  name        = "regional-k8s-sg"
+  description = "Правила группы обеспечивают базовую работоспособность кластера Managed Service for Kubernetes. Примените ее к кластеру и группам узлов."
+  network_id  = var.yandex_vpc_network
+  ingress {
+    protocol          = "TCP"
+    description       = "Правило разрешает проверки доступности с диапазона адресов балансировщика нагрузки. Нужно для работы отказоустойчивого кластера Managed Service for Kubernetes и сервисов балансировщика."
+    predefined_target = "loadbalancer_healthchecks"
+    from_port         = 0
+    to_port           = 65535
+  }
+  ingress {
+    protocol          = "ANY"
+    description       = "Правило разрешает взаимодействие мастер-узел и узел-узел внутри группы безопасности."
+    predefined_target = "self_security_group"
+    from_port         = 0
+    to_port           = 65535
+  }
+  ingress {
+    protocol          = "ICMP"
+    description       = "Правило разрешает отладочные ICMP-пакеты из внутренних подсетей."
+    v4_cidr_blocks    = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+  }
+  ingress {
+    protocol          = "TCP"
+    description       = "Правило разрешает входящий трафик из интернета на диапазон портов NodePort. Добавьте или измените порты на нужные вам."
+    v4_cidr_blocks    = ["0.0.0.0/0"]
+    from_port         = 30000
+    to_port           = 32767
+  }
+  egress {
+    protocol          = "ANY"
+    description       = "Правило разрешает весь исходящий трафик. Узлы могут связаться с Yandex Container Registry, Yandex Object Storage, Docker Hub и т. д."
+    v4_cidr_blocks    = ["0.0.0.0/0"]
+    from_port         = 0
+    to_port           = 65535
+  }
 }
 ```
 
@@ -795,9 +887,8 @@ variable "yandex_vpc_network" {
 }
 ```
 
-![image](https://github.com/user-attachments/assets/f825f956-5e08-447d-975f-4a96bdc57b09)
-![image](https://github.com/user-attachments/assets/37ad2520-b1c4-4f8a-8887-64ba8732a076)
-![image](https://github.com/user-attachments/assets/30b21ef8-b029-46b8-8dfc-35fe5b1ce42b)
+![image](https://github.com/user-attachments/assets/318b1f16-e682-4d1f-8e17-fde0f0f2ca0d)
+
 
 
   б. С помощью terraform resource для [kubernetes node group](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_node_group)
