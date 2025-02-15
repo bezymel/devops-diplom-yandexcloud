@@ -619,6 +619,13 @@ resource "yandex_vpc_security_group" "regional-k8s-sg" {
     to_port           = 65535
   }
   ingress {
+    protocol          = "ANY"
+    description       = "Правило разрешает взаимодействие под-под и сервис-сервис. Укажите подсети вашего кластера Managed Service for Kubernetes и сервисов."
+    v4_cidr_blocks    = concat(yandex_vpc_subnet.mysubnet-a.v4_cidr_blocks, yandex_vpc_subnet.mysubnet-b.v4_cidr_blocks, yandex_vpc_subnet.mysubnet-d.v4_cidr_blocks)
+    from_port         = 0
+    to_port           = 65535
+  }
+  ingress {
     protocol          = "ICMP"
     description       = "Правило разрешает отладочные ICMP-пакеты из внутренних подсетей."
     v4_cidr_blocks    = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
