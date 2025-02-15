@@ -391,57 +391,6 @@ variable "scheduling_policy" {
    * Конфигурация worker нод:
 
 ```
-#Конфиграция control-plane ноды
-
-resource "yandex_compute_instance" "control-plane" {
-  name            = var.control_plane_name
-  platform_id     = var.platform
-  resources {
-    cores         = var.control_plane_core
-    memory        = var.control_plane_memory
-    core_fraction = var.control_plane_core_fraction
-  }
-
-  boot_disk {
-    initialize_params {
-      image_id = var.image_id
-      size     = var.control_plane_disk_size
-    }
-  }
-
-  scheduling_policy {
-    preemptible = var.scheduling_policy
-  }
-
-  network_interface {
-    subnet_id = yandex_vpc_subnet.public_subnet[0].id
-    nat       = var.nat
-  }
-
-  metadata = {
-    user-data = <<-EOF
-      #cloud-config
-      ssh_pwauth: true
-      users:
-        - name: bezumel
-          shell: /bin/bash
-          sudo: ['ALL=(ALL) NOPASSWD:ALL']
-          ssh-authorized-keys:
-            - ${var.ssh_public_key}
-          passwd: ${var.bezumel_password}  # Задайте пароль для пользователя
-        - name: root
-          passwd: ${var.root_password}  # Задайте пароль для root
-      runcmd:
-        - echo 'bezumel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/bezumel
-        - chmod 440 /etc/sudoers.d/bezumel
-    EOF
-  }
-}
-```
-
-   * Переменные для worker нод:
-
-```
 #Конфигурация worker нод:
 
 resource "yandex_compute_instance" "worker" {
@@ -487,6 +436,60 @@ resource "yandex_compute_instance" "worker" {
         - chmod 440 /etc/sudoers.d/bezumel
     EOF
   }
+}
+```
+
+   * Переменные для worker нод:
+
+```
+### worker nodes vars
+
+variable "worker_count" {
+  type        = number
+  default     = "2"
+}
+
+variable "worker_platform" {
+  type        = string
+  default     = "standard-v1"
+}
+
+variable "worker_cores" {
+  type        = number
+  default     = "4"
+}
+
+variable "worker_memory" {
+  type        = number
+  default     = "2"
+}
+
+variable "worker_core_fraction" {
+  description = "guaranteed vCPU, for yandex cloud - 20, 50 or 100 "
+  type        = number
+  default     = "20"
+}
+
+variable "worker_disk_size" {
+  type        = number
+  default     = "50"
+}
+
+variable "nat" {
+  type        = bool
+  default     = "true"
+}
+
+variable "bezumel_password" {
+  description = "Пароль для пользователя bezumel"
+  type        = string
+  sensitive   = true
+}
+
+variable "root_password" {
+  description = "Пароль для root пользователя"
+  type        = string
+  sensitive   = true
 }
 ```
 
