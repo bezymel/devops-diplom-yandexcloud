@@ -46,11 +46,6 @@ variable "yandex_vpc_network" {
   default = "enpg8eb9p7oonpva34g3"
 }
 
-variable "regional-k8s-sg" {
-  type    = string
-  default = "enperr0p1ei20fl0cm9h"
-}
-
 variable "my-bucket-encryption-key" {
   type    = string
   default = "abjdrrn2ov80f23m8j5n"
