@@ -696,9 +696,9 @@ cp -rfp /home/bezumel/Diplom1/terraform/kubespray/inventory/sample /home/bezumel
 # ## different ip than the default iface
 # ## We should set etcd_member_name for etcd cluster. The node that is not a etcd member do not need to set the value, or can set the empty string value.
 [all]
-node1 ansible_host=158.160.42.115 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.8  etcd_member_name=etcd1
-node2 ansible_host=158.160.27.3  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.12 etcd_member_name=etcd2
-node3 ansible_host=158.160.129.38  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.26 etcd_member_name=etcd3
+node1 ansible_host=158.160.42.115 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip==10.3.0.1  etcd_member_name=etcd1
+node2 ansible_host=158.160.27.3  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip==10.3.0.2 etcd_member_name=etcd2
+node3 ansible_host=158.160.129.38  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip==10.3.0.3 etcd_member_name=etcd3
 # node4 ansible_host=95.54.0.15   # ip=10.3.0.4 etcd_member_name=etcd4
 # node5 ansible_host=95.54.0.16   # ip=10.3.0.5 etcd_member_name=etcd5
 # node6 ansible_host=95.54.0.17   # ip=10.3.0.6 etcd_member_name=etcd6
@@ -736,7 +736,7 @@ calico_rr
 ```
 ansible-playbook -i /home/bezumel/Diplom1/terraform/mycluster/sample/inventory.ini cluster.yml -b -v
 ```
-![image](https://github.com/user-attachments/assets/44949783-8af7-4bb4-a112-90b5426ab613)
+
   
 Ожидаемый результат:
 
@@ -744,7 +744,7 @@ ansible-playbook -i /home/bezumel/Diplom1/terraform/mycluster/sample/inventory.i
    
    * Подключаемся к control-plane ноде
 ```
-ssh -l bezumel 89.169.147.219
+ssh -l bezumel 158.160.42.115
 ```
    * Проверяем, что кластер состоит из одной control-plane ноды и двух worker нод
 ```
