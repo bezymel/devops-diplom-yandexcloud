@@ -295,10 +295,11 @@ terraform destroy
 
 На этом этапе необходимо создать [Kubernetes](https://kubernetes.io/ru/docs/concepts/overview/what-is-kubernetes/) кластер на базе предварительно созданной инфраструктуры.   Требуется обеспечить доступ к ресурсам из Интернета.
 
-3. Альтернативный вариант: воспользуйтесь сервисом [Yandex Managed Service for Kubernetes](https://cloud.yandex.ru/services/managed-kubernetes)  
-  а. С помощью terraform resource для [kubernetes](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_cluster) создать **региональный** мастер kubernetes с размещением нод в разных 3 подсетях
+Это можно сделать двумя способами:
 
-   * Для начала создадим кластер
+Рекомендуемый вариант: самостоятельная установка Kubernetes кластера.
+а. При помощи Terraform подготовить как минимум 3 виртуальных машины Compute Cloud для создания Kubernetes-кластера. Тип виртуальной машины следует выбрать самостоятельно с учётом требовании к производительности и стоимости. Если в дальнейшем поймете, что необходимо сменить тип инстанса, используйте Terraform для внесения изменений.
+В целях экономии выделенного бюджета и с учетом ресурсоемкости создадим кластер из одной control-plane ноды и двух worker нод.
 
   * Конфиграция control-plane ноды:
 
@@ -594,125 +595,6 @@ resource "yandex_vpc_subnet" "mysubnet-d" {
   zone           = "ru-central1-d"
   network_id     = var.yandex_vpc_network
 }
-
-
-#Создание кластера
-
-locals {
-  folder_id   = var.folder_id
-}
-
-resource "yandex_kubernetes_cluster" "k8s-regional" {
-  name = "k8s-regional"
-  network_id = var.yandex_vpc_network
-  master {
-    master_location {
-      zone      = "ru-central1-a"
-      subnet_id = yandex_vpc_subnet.mysubnet-a.id
-    }
-    master_location {
-      zone      = "ru-central1-b"
-      subnet_id = yandex_vpc_subnet.mysubnet-b.id
-    }
-    master_location {
-      zone      = "ru-central1-d"
-      subnet_id = yandex_vpc_subnet.mysubnet-d.id
-    }
-    security_group_ids = [yandex_vpc_security_group.regional-k8s-sg.id]
-  }
-  service_account_id      = yandex_iam_service_account.ww.id
-  node_service_account_id = yandex_iam_service_account.ww.id
-  depends_on = [
-    yandex_resourcemanager_folder_iam_member.k8s-clusters-agent,
-    yandex_resourcemanager_folder_iam_member.vpc-public-admin,
-    yandex_resourcemanager_folder_iam_member.images-puller,
-    yandex_resourcemanager_folder_iam_member.encrypterDecrypter
-  ]
-  kms_provider {
-    key_id = var.my-bucket-encryption-key
-  }
-}
-
-resource "yandex_resourcemanager_folder_iam_member" "k8s-clusters-agent" {
-  # Сервисному аккаунту назначается роль "k8s.clusters.agent".
-  folder_id = local.folder_id
-  role      = "k8s.clusters.agent"
-  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
-}
-
-resource "yandex_resourcemanager_folder_iam_member" "vpc-public-admin" {
-  # Сервисному аккаунту назначается роль "vpc.publicAdmin".
-  folder_id = local.folder_id
-  role      = "vpc.publicAdmin"
-  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
-}
-
-resource "yandex_resourcemanager_folder_iam_member" "images-puller" {
-  # Сервисному аккаунту назначается роль "container-registry.images.puller".
-  folder_id = local.folder_id
-  role      = "container-registry.images.puller"
-  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
-}
-
-resource "yandex_resourcemanager_folder_iam_member" "encrypterDecrypter" {
-  # Сервисному аккаунту назначается роль "kms.keys.encrypterDecrypter".
-  folder_id = local.folder_id
-  role      = "kms.keys.encrypterDecrypter"
-  member    = "serviceAccount:${yandex_iam_service_account.ww.id}"
-}
-
-resource "yandex_kms_symmetric_key" "kms-key" {
-  # Ключ Yandex Key Management Service для шифрования важной информации, такой как пароли, OAuth-токены и SSH-ключи.
-  name              = "kms-key"
-  default_algorithm = "AES_128"
-  rotation_period   = "8760h" # 1 год.
-}
-
-resource "yandex_vpc_security_group" "regional-k8s-sg" {
-  name        = "regional-k8s-sg"
-  description = "Правила группы обеспечивают базовую работоспособность кластера Managed Service for Kubernetes. Примените ее к кластеру и группам узлов."
-  network_id  = var.yandex_vpc_network
-  ingress {
-    protocol          = "TCP"
-    description       = "Правило разрешает проверки доступности с диапазона адресов балансировщика нагрузки. Нужно для работы отказоустойчивого кластера Managed Service for Kubernetes и сервисов балансировщика."
-    predefined_target = "loadbalancer_healthchecks"
-    from_port         = 0
-    to_port           = 65535
-  }
-  ingress {
-    protocol          = "ANY"
-    description       = "Правило разрешает взаимодействие мастер-узел и узел-узел внутри группы безопасности."
-    predefined_target = "self_security_group"
-    from_port         = 0
-    to_port           = 65535
-  }
-  ingress {
-    protocol          = "ANY"
-    description       = "Правило разрешает взаимодействие под-под и сервис-сервис. Укажите подсети вашего кластера Managed Service for Kubernetes и сервисов."
-    v4_cidr_blocks    = concat(yandex_vpc_subnet.mysubnet-a.v4_cidr_blocks, yandex_vpc_subnet.mysubnet-b.v4_cidr_blocks, yandex_vpc_subnet.mysubnet-d.v4_cidr_blocks)
-    from_port         = 0
-    to_port           = 65535
-  }
-  ingress {
-    protocol          = "ICMP"
-    description       = "Правило разрешает отладочные ICMP-пакеты из внутренних подсетей."
-    v4_cidr_blocks    = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
-  }
-  ingress {
-    protocol          = "TCP"
-    description       = "Правило разрешает входящий трафик из интернета на диапазон портов NodePort. Добавьте или измените порты на нужные вам."
-    v4_cidr_blocks    = ["0.0.0.0/0"]
-    from_port         = 30000
-    to_port           = 32767
-  }
-  egress {
-    protocol          = "ANY"
-    description       = "Правило разрешает весь исходящий трафик. Узлы могут связаться с Yandex Container Registry, Yandex Object Storage, Docker Hub и т. д."
-    v4_cidr_blocks    = ["0.0.0.0/0"]
-    from_port         = 0
-    to_port           = 65535
-  }
-}
 ```
 
 variables.tf
@@ -776,13 +658,90 @@ variable "my-bucket-encryption-key" {
 }
 
 ```
+
 ![image](https://github.com/user-attachments/assets/9ae0108e-a1f1-4b82-8c23-74fc9d234924)
 ![image](https://github.com/user-attachments/assets/318b1f16-e682-4d1f-8e17-fde0f0f2ca0d)
 ![image](https://github.com/user-attachments/assets/1973d194-6cc4-429d-8698-24892b2567e7)
 
+б. Подготовить ansible конфигурации, можно воспользоваться, например Kubespray
 
+Скачиваем репозиторий с Kubespray
+```
+git clone https://github.com/kubernetes-sigs/kubespray
+```
+Устанавливаем зависимости
+```
+python3.10 -m pip install --upgrade pip
+pip3 install -r requirements.txt
+```
+Добавьте Kubespray в файл requirements.yml
+```
+collections:
+- name: https://github.com/kubernetes-sigs/kubespray
+  type: git
+  version: master # use the appropriate tag or branch for the version you need
+ ``` 
+Установите свою коллекцию
+```
+ansible-galaxy install -r requirements.yml
+```
 
-  б. С помощью terraform resource для [kubernetes node group](https://registry.terraform.io/providers/yandex-cloud/yandex/latest/docs/resources/kubernetes_node_group)
+Копируем шаблон с inventory файлом
+```
+cp -rfp /home/bezumel/Diplom1/terraform/kubespray/inventory/sample /home/bezumel/Diplom1/terraform/mycluster
+```
+
+Корректируем файл inventory.ini, где прописываем актуальные ip адреса виртуальных машин, развернутых в предвдущих пунктах, в качестве CRI будем использовать containerd, а запуск etcd будет осущуствляться на мастере.
+```
+# ## Configure 'ip' variable to bind kubernetes services on a
+# ## different ip than the default iface
+# ## We should set etcd_member_name for etcd cluster. The node that is not a etcd member do not need to set the value, or can set the empty string value.
+[all]
+node1 ansible_host=89.169.147.219 ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.8  etcd_member_name=etcd1
+node2 ansible_host=158.160.93.164  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.12 etcd_member_name=etcd2
+node3 ansible_host=158.160.168.244  ansible_user=bezumel ansible_ssh_private_key_file=~/.ssh/id_rsa  # ip=192.168.10.26 etcd_member_name=etcd3
+# node4 ansible_host=95.54.0.15   # ip=10.3.0.4 etcd_member_name=etcd4
+# node5 ansible_host=95.54.0.16   # ip=10.3.0.5 etcd_member_name=etcd5
+# node6 ansible_host=95.54.0.17   # ip=10.3.0.6 etcd_member_name=etcd6
+
+# ## configure a bastion host if your nodes are not directly reachable
+# [bastion]
+# bastion ansible_host=x.x.x.x ansible_user=some_user
+
+[kube_control_plane]
+node1
+# node2
+# node3
+
+[etcd]
+ node1
+# node2
+# node3
+
+[kube_node]
+node2
+node3
+# node4
+# node5
+# node6
+
+[calico_rr]
+
+[k8s_cluster:children]
+kube_control_plane
+kube_node
+calico_rr
+```
+
+в. Задеплоить Kubernetes на подготовленные ранее инстансы, в случае нехватки каких-либо ресурсов вы всегда можете создать их при помощи Terraform.
+```
+ansible-playbook -i /home/bezumel/Diplom1/terraform/kubespray/inventory/sample/inventory.ini cluster.yml -b -v
+```
+
+Альтернативный вариант: воспользуйтесь сервисом Yandex Managed Service for Kubernetes
+а. С помощью terraform resource для kubernetes создать региональный мастер kubernetes с размещением нод в разных 3 подсетях
+б. С помощью terraform resource для kubernetes node group
+Альтернативный вариант рассмотрен в одном из домашних заданий, где бул подготовлен соответствующий манифест, но для выполнения дипломного проекта готовый кластер Yandex Managed Service for Kubernetes дороже подготовленного самостоятельно в варианте 1.
   
 Ожидаемый результат:
 
