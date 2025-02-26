@@ -734,7 +734,7 @@ calico_rr
 
 в. Задеплоить Kubernetes на подготовленные ранее инстансы, в случае нехватки каких-либо ресурсов вы всегда можете создать их при помощи Terraform.
 ```
-ansible-playbook -i /home/bezumel/Diplom1/terraform/kubespray/inventory/sample/inventory.ini cluster.yml -b -v
+ansible-playbook -i /home/bezumel/Diplom1/terraform/mycluster/sample/inventory.ini cluster.yml -b -v
 ```
 ![image](https://github.com/user-attachments/assets/44949783-8af7-4bb4-a112-90b5426ab613)
   
