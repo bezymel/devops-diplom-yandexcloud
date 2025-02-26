@@ -754,7 +754,7 @@ kubectl get nodes
 
     
 2. В файле `~/.kube/config` находятся данные для доступа к кластеру.
-   ![image](https://github.com/user-attachments/assets/19bd251e-fb5d-4a12-b0af-9ec5a2e3dbb9)
+   ![image](https://github.com/user-attachments/assets/d5fdeec8-79c6-4a4c-8317-77365487ea39)
 
 3. Команда `kubectl get pods --all-namespaces` отрабатывает без ошибок.
    ![image](https://github.com/user-attachments/assets/c5f60224-94bb-4b7c-95c9-c52c822ac89b)
