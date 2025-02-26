@@ -737,11 +737,7 @@ calico_rr
 ```
 ansible-playbook -i /home/bezumel/Diplom1/terraform/kubespray/inventory/sample/inventory.ini cluster.yml -b -v
 ```
-
-Альтернативный вариант: воспользуйтесь сервисом Yandex Managed Service for Kubernetes
-а. С помощью terraform resource для kubernetes создать региональный мастер kubernetes с размещением нод в разных 3 подсетях
-б. С помощью terraform resource для kubernetes node group
-Альтернативный вариант рассмотрен в одном из домашних заданий, где бул подготовлен соответствующий манифест, но для выполнения дипломного проекта готовый кластер Yandex Managed Service for Kubernetes дороже подготовленного самостоятельно в варианте 1.
+![image](https://github.com/user-attachments/assets/44949783-8af7-4bb4-a112-90b5426ab613)
   
 Ожидаемый результат:
 
@@ -749,7 +745,7 @@ ansible-playbook -i /home/bezumel/Diplom1/terraform/kubespray/inventory/sample/i
    
    * Подключаемся к control-plane ноде
 ```
-ssh -l bezumel 51.250.77.49
+ssh -l bezumel 89.169.147.219
 ```
    * Проверяем, что кластер состоит из одной control-plane ноды и двух worker нод
 ```
