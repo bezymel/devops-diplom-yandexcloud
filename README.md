@@ -736,6 +736,7 @@ calico_rr
 ```
 ansible-playbook -i /home/bezumel/Diplom1/terraform/mycluster/sample/inventory.ini cluster.yml -b -v
 ```
+![image](https://github.com/user-attachments/assets/889c8e40-a2a4-4df4-8146-d3b3b660283c)
 
   
 Ожидаемый результат:
