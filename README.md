@@ -751,13 +751,16 @@ ssh -l bezumel 158.160.42.115
 ```
 kubectl get nodes
 ```
+![image](https://github.com/user-attachments/assets/1b02f927-d801-4369-a61a-ce2a90d9860e)
 
     
 2. В файле `~/.kube/config` находятся данные для доступа к кластеру.
-   ![image](https://github.com/user-attachments/assets/d5fdeec8-79c6-4a4c-8317-77365487ea39)
+   ![image](https://github.com/user-attachments/assets/97c88747-c2ee-4ebd-b510-f2720765b1de)
+
 
 3. Команда `kubectl get pods --all-namespaces` отрабатывает без ошибок.
-   ![image](https://github.com/user-attachments/assets/c5f60224-94bb-4b7c-95c9-c52c822ac89b)
+   ![image](https://github.com/user-attachments/assets/6f5ba005-5999-4e53-99a4-86c50ce8dbd6)
+
 
 
 ---
