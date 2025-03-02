@@ -816,7 +816,6 @@ docker build -t bezumelll/nginx-static:latest .
 ```
 
 ![image](https://github.com/user-attachments/assets/a7a69946-32d3-49cf-a238-1034251bdb13)
-![image](https://github.com/user-attachments/assets/d7877975-0dc0-43b2-9e35-541d3452d71c)
 
 И размещаем его в нашем хранилище на DockerHub
 
@@ -824,6 +823,7 @@ docker build -t bezumelll/nginx-static:latest .
 docker push bezumelll/nginx-static:latest
 ```
 
+![image](https://github.com/user-attachments/assets/d7877975-0dc0-43b2-9e35-541d3452d71c)
 ![image](https://github.com/user-attachments/assets/52d59e77-bb6a-4745-af6b-0e722bcceb1d)
 
 Ожидаемый результат:
