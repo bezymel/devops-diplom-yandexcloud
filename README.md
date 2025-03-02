@@ -776,8 +776,37 @@ https://github.com/bezymel/devops-diplom-yandexcloud/tree/main/terraform2
 1. Рекомендуемый вариант:  
    а. Создайте отдельный git репозиторий с простым nginx конфигом, который будет отдавать статические данные.  
    б. Подготовьте Dockerfile для создания образа приложения.  
-2. Альтернативный вариант:  
-   а. Используйте любой другой код, главное, чтобы был самостоятельно создан Dockerfile.
+
+  * Создан репозиторий [nginx-static](https://github.com/bezymel/nginx-static/tree/main)
+
+  * Далее копируем репозиторий на виртуальную машину в одноименную директорию
+    
+```
+git init
+git clone https://github.com/LeonidKhoroshev/nginx-static.git
+```
+
+  * Создаем внутри проекта директорию [static](https://github.com/bezymel/nginx-static/tree/main/static) и в ней указываем конфигурацию файла основной стартовой страницы index.html и styles.css, созданного для улучшения внешнего вида нашей веб-страницы. Также создаем директорию images для хранения там фоновой картинки.
+
+б. Подготовьте Dockerfile для создания образа приложения.
+
+  * Переходим в корневую директорию и создаем Dockerfile следующей конфигурации
+    
+```
+FROM nginx:latest
+
+COPY ./static /usr/share/nginx/html
+
+EXPOSE 80
+```
+
+   * Сохраняем изменения в ветке main нашего репозитория:
+     
+```
+git add .
+git commit -m "first commit"
+git push https://github.com/bezymel/nginx-static.git main
+```
 
 Ожидаемый результат:
 
