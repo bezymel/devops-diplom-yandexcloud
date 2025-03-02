@@ -783,7 +783,7 @@ https://github.com/bezymel/devops-diplom-yandexcloud/tree/main/terraform2
     
 ```
 git init
-git clone https://github.com/LeonidKhoroshev/nginx-static.git
+git clone https://github.com/bezymel/nginx-static.git
 ```
 
   * Создаем внутри проекта директорию [static](https://github.com/bezymel/nginx-static/tree/main/static) и в ней указываем конфигурацию файла основной стартовой страницы index.html и styles.css, созданного для улучшения внешнего вида нашей веб-страницы. Также создаем директорию images для хранения там фоновой картинки.
