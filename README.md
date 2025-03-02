@@ -839,7 +839,52 @@ docker push bezumelll/nginx-static:latest
 
 Цель:
 1. Задеплоить в кластер [prometheus](https://prometheus.io/), [grafana](https://grafana.com/), [alertmanager](https://github.com/prometheus/alertmanager), [экспортер](https://github.com/prometheus/node_exporter) основных метрик Kubernetes.
-2. Задеплоить тестовое приложение, например, [nginx](https://www.nginx.com/) сервер отдающий статическую страницу.
+
+   * Выполним установку вышеуказанных мониторингов через helm. Сначала установим helm на control-plane ноду
+```
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+```
+   * Создаем отдельное простанство имен для мониторинга
+```
+kubectl create namespace monitoring
+```
+   * Добавляем репозиторий helm c prometheus
+```
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+```
+   * Устанавливаем kube-prometheus-stack (установка Prometheus, Grafana, Alertmanager, node-exporter и kube-state-metrics)
+```
+helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring
+```
+   * Проверяем, что все поры работают нормально
+```
+kubectl get pods -n monitoring
+```
+
+![image](https://github.com/user-attachments/assets/b3ba49f2-9b47-4c60-8ee8-50d9eaef2c04)
+
+
+   * Получаем пароль от Grafana
+```
+kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+```
+   * Настраиваем доступ к Grafana по внешнему ip адресу, для чего создаем файл values.yml
+```
+grafana:
+  service:
+    type: NodePort
+    nodePort: 32000
+```
+
+   * Обновляем helm чарт
+```
+helm upgrade prometheus prometheus-community/kube-prometheus-stack -n monitoring -f values.yml
+```
+
+![image](https://github.com/user-attachments/assets/28fbe7f0-f930-435f-b1c6-92c9a5282c4b)
+
+  
+3. Задеплоить тестовое приложение, например, [nginx](https://www.nginx.com/) сервер отдающий статическую страницу.
 
 Способ выполнения:
 1. Воспользоваться пакетом [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus), который уже включает в себя [Kubernetes оператор](https://operatorhub.io/) для [grafana](https://grafana.com/), [prometheus](https://prometheus.io/), [alertmanager](https://github.com/prometheus/alertmanager) и [node_exporter](https://github.com/prometheus/node_exporter). Альтернативный вариант - использовать набор helm чартов от [bitnami](https://github.com/bitnami/charts/tree/main/bitnami).
