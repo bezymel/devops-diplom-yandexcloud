@@ -883,8 +883,73 @@ helm upgrade prometheus prometheus-community/kube-prometheus-stack -n monitoring
 
 ![image](https://github.com/user-attachments/assets/28fbe7f0-f930-435f-b1c6-92c9a5282c4b)
 
+   * Далее настраиваем необходимые метрики, так для k8s кластера. Для простоты воспользуемся готовым дашбордом из того, что предлагает Grafana - ID 315
+   * Проверем наличие новых дашбордов
+
+![image](https://github.com/user-attachments/assets/16a01929-7ab9-4748-b58c-ab346ee4132f)
+
+Видим, что из кластера поступают данные, но в пока мы не деплоили наше приложение, мониторинг не слишком информативен ввиду отсутствия рабочей нагрузки
+
+![image](https://github.com/user-attachments/assets/253724e0-364e-45aa-89eb-dfac16133722)
+
   
 3. Задеплоить тестовое приложение, например, [nginx](https://www.nginx.com/) сервер отдающий статическую страницу.
+
+   * Cоздаем деплой nginx-deployment.yml, куда прописываем следующую конфигурацию
+     
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-static
+  labels:
+    app: nginx-static
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx-static
+  template:
+    metadata:
+      labels:
+        app: nginx-static
+    spec:
+      containers:
+        - name: nginx
+          image: bezumelll/nginx-static:latest
+          ports:
+            - containerPort: 80
+```
+
+   * Также нам необходим сервис nginx-service.yml
+
+```
+piVersion: v1
+kind: Service
+metadata:
+  name: nginx-static
+  labels:
+    app: nginx-static
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 32001
+  selector:
+    app: nginx-static
+```
+
+Применяем изменения и проверяем результат
+
+```
+kubectl apply -f nginx-deployment.yml
+kubectl apply -f nginx-service.yml
+kubectl get pods -l app=nginx-static
+```
+![image](https://github.com/user-attachments/assets/3404c8c9-9a2c-4939-a104-c904966cc67a)
+
+
 
 Способ выполнения:
 1. Воспользоваться пакетом [kube-prometheus](https://github.com/prometheus-operator/kube-prometheus), который уже включает в себя [Kubernetes оператор](https://operatorhub.io/) для [grafana](https://grafana.com/), [prometheus](https://prometheus.io/), [alertmanager](https://github.com/prometheus/alertmanager) и [node_exporter](https://github.com/prometheus/node_exporter). Альтернативный вариант - использовать набор helm чартов от [bitnami](https://github.com/bitnami/charts/tree/main/bitnami).
