@@ -808,6 +808,24 @@ git commit -m "first commit"
 git push https://github.com/bezymel/nginx-static.git main
 ```
 
+Далее авторизовываемся на DockerHub и в консоли и собираем docker образ
+
+```
+docker login
+docker build -t bezumelll/nginx-static:latest .
+```
+
+![image](https://github.com/user-attachments/assets/a7a69946-32d3-49cf-a238-1034251bdb13)
+![image](https://github.com/user-attachments/assets/d7877975-0dc0-43b2-9e35-541d3452d71c)
+
+И размещаем его в нашем хранилище на DockerHub
+
+```
+docker push bezumelll/nginx-static:latest
+```
+
+![image](https://github.com/user-attachments/assets/52d59e77-bb6a-4745-af6b-0e722bcceb1d)
+
 Ожидаемый результат:
 
 1. Git репозиторий с тестовым приложением и Dockerfile.
