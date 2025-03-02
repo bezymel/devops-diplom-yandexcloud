@@ -205,8 +205,6 @@ terraform init
 ```
 ![image](https://github.com/user-attachments/assets/c10eb8ae-88aa-433a-9707-3572df909f64)
 ![image](https://github.com/user-attachments/assets/fbe6a0dc-4cad-4059-aadc-0bd6915212a9)
-
-
    
 3. Создайте конфигурацию Terrafrom, используя созданный бакет ранее как бекенд для хранения стейт файла. Конфигурации Terraform для создания сервисного аккаунта и бакета и основной инфраструктуры следует сохранить в разных папках.
 
@@ -214,6 +212,7 @@ terraform init
   
 ![image](https://github.com/user-attachments/assets/5ed9dc8c-43df-4aac-95dd-9be5b085c91c)
 
+###Промежуточный итог https://github.com/bezymel/devops-diplom-yandexcloud/tree/main/terraform
 
 4. Создайте VPC с подсетями в разных зонах доступности.
 
@@ -289,6 +288,8 @@ terraform destroy
 
 1. Terraform сконфигурирован и создание инфраструктуры посредством Terraform возможно без дополнительных ручных действий, стейт основной конфигурации сохраняется в бакете или Terraform Cloud
 2. Полученная конфигурация инфраструктуры является предварительной, поэтому в ходе дальнейшего выполнения задания возможны изменения.
+
+###Промежуточный итог https://github.com/bezymel/devops-diplom-yandexcloud/tree/main/terraform1
 
 ---
 ### Создание Kubernetes кластера
@@ -761,7 +762,7 @@ kubectl get nodes
 3. Команда `kubectl get pods --all-namespaces` отрабатывает без ошибок.
    ![image](https://github.com/user-attachments/assets/6f5ba005-5999-4e53-99a4-86c50ce8dbd6)
 
-
+###Промежуточный итог https://github.com/bezymel/devops-diplom-yandexcloud/tree/main/terraform2
 
 ---
 ### Создание тестового приложения
