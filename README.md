@@ -1213,3 +1213,6 @@ pipeline {
 4. Ссылка на тестовое приложение и [веб интерфейс Grafana](http://84.201.178.228:32000/) с данными доступа: логин - admin пароль - prom-operator.
 5. Все репозитории рекомендуется хранить на одном ресурсе (github, gitlab).
 
+Дополнительно прилагаю файлы для развертывания Jenkins в k8s
+
+https://github.com/bezymel/devops-diplom-yandexcloud/tree/main/CI-CD
