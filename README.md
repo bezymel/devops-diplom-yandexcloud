@@ -948,6 +948,7 @@ kubectl apply -f nginx-service.yml
 kubectl get pods -l app=nginx-static
 ```
 ![image](https://github.com/user-attachments/assets/3404c8c9-9a2c-4939-a104-c904966cc67a)
+![image](https://github.com/user-attachments/assets/5c1e5ed2-195c-4ea6-a626-2c3e877736ce)
 
 
 
