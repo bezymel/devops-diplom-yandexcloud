@@ -1099,6 +1099,103 @@ kubectl logs jenkins-cf789dc4d-l2v56 --namespace=devops-tools
 http://84.201.178.228:32001/
 ```
 
+![image](https://github.com/user-attachments/assets/a59a2f65-a2af-40d4-8001-44ba366604ac)
+
+   * Также необходимо настроить Docker Credentials в веб-интерфейсе Jenkins.
+     
+![image](https://github.com/user-attachments/assets/95f1081e-3966-47e7-aa6c-f2b317a3f957)
+
+   * Далее настраиваем агенты для сборки на основе Kubernetes pod. Для этого сначала установим плагин Kubernetes для Jenkins, далее создаем новое облако Kubernetes, в настройках прописываем пространство имен devops-tools, в котором развернут под с Jenkins и также через графический интерфейс тестируем соединение с кластером.
+
+![image](https://github.com/user-attachments/assets/1b90bf5d-d332-4ab6-95bb-c7d03f717690)
+
+   * Убедившись в наличии подключения, добавляем шаблон пода, который будет являться нашим сборочным агентом. Задаем название jenkins-agent, указываем пространство имен и image inbound-agent
+
+![image](https://github.com/user-attachments/assets/c6bae01a-84c4-460a-853f-27fbd58e2519)
+
+Подробная инструкция по созданию и настройке агента доступна по ссылке. Поскольку после публикации статьи в Jenkins прошел ряд обновлений, то не вся информация в ней актуальна (например названия плагинов), но в целом описанный метод является рабочим (на период сентября 2024 года).
+
+   * Также для автоматизации нашего проекта необходима организация доступа через токен к DockerHub, Получаем токен в личном кабинете на https://app.docker.com
+
+![image](https://github.com/user-attachments/assets/652b7f2e-8705-4274-b961-e0d559f5a815)
+
+   * Сохраняем токен в credentials
+
+![image](https://github.com/user-attachments/assets/3bc588dc-b3b2-43a2-a757-8fed3e7ced39)
+
+   * После того как предварительная настройка Jenkins произведена, создадим pipeline для нашего проекта
+```
+pipeline {
+    agent any  
+
+    environment {
+        DOCKER_HUB_REPO = 'bezumelll/nginx-static'
+        DOCKER_CREDENTIALS_ID = '40d43344-1e51-45be-82bf-bc26c42bce12'  // ID учетных данных Docker Hub в Jenkins
+        KUBECONFIG_CREDENTIALS_ID = '0065dfd6-1b94-44d5-9d55-ff7d34d8be22'  // ID учетных данных для подключения к Kubernetes в Jenkins
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Получение кода из GitHub
+                git branch: 'main', url: 'https://github.com/bezymel/nginx-static.git'
+            }
+        }
+        
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Получение текущего тега, если есть
+                    def tag = env.GIT_TAG_NAME ?: 'latest'
+                    // Сборка Docker-образа
+                    sh "docker build -t ${DOCKER_HUB_REPO}:${tag} ."
+                }
+            }
+        }
+        
+        stage('Push to Docker Hub') {
+           steps {
+             withCredentials([string(credentialsId: 'docker_hub_pat', variable: 'DOCKER_HUB_PAT')]) {
+               sh """
+               echo $DOCKER_HUB_PAT | docker login -u bezumelll --password-stdin
+               docker push bezumelll/nginx-static::latest
+               """
+            }
+        }
+    }
+        
+        stage('Deploy to Kubernetes') {
+            when {
+                tag "v*" // Деплой выполняется только при создании тега
+            }
+            steps {
+                script {
+                    withCredentials([file(credentialsId: KUBECONFIG_CREDENTIALS_ID, variable: 'KUBECONFIG')]) {
+                        def tag = env.GIT_TAG_NAME ?: 'latest'
+                        // Применение конфигурации деплоя в Kubernetes
+                        sh """
+                        kubectl set image deployment/nginx-static-deployment nginx-static=${DOCKER_HUB_REPO}:${tag}
+                        kubectl rollout status deployment/nginx-static-deployment
+                        """
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
+```
+
+Также для автоматизации нашего проекта необходима организация доступа через токен к DockerHub, Получаем токен в личном кабинете на https://app.docker.com
+
 Ожидаемый результат:
 
 1. Интерфейс ci/cd сервиса доступен по http.
