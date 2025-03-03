@@ -1162,7 +1162,7 @@ pipeline {
              withCredentials([string(credentialsId: 'docker_hub_pat', variable: 'DOCKER_HUB_PAT')]) {
                sh """
                echo $DOCKER_HUB_PAT | docker login -u bezumelll --password-stdin
-               docker push bezumelll/nginx-static::latest
+               docker push bezumelll/nginx-static:latest
                """
             }
         }
