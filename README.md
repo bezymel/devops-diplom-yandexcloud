@@ -1077,6 +1077,22 @@ kubectl get pods -n devops-tools
 
 ![image](https://github.com/user-attachments/assets/1031627f-96dc-4abb-a968-cbca204d51df)
 
+   * Далее создаем соответствующий сервис. Незначительно корректируем дефортный файл service.yaml из скачанного репозитория, указав nodePort: 32001, так как дефолтный порт 32000 уже занят мониторингом (Grafana), а на порту 32002 работает наш сервер nginx.
+
+   * Запускаем сервис
+     
+```
+kubectl apply -f service.yaml
+```
+
+   * Для первого входа через веб-интерфейс определяем пароль
+     
+```
+kubectl logs jenkins-cf789dc4d-l2v56 --namespace=devops-tools
+```
+
+![image](https://github.com/user-attachments/assets/bc82387b-9353-4802-b3d9-14550ad6bcfc)
+
 
 Ожидаемый результат:
 
