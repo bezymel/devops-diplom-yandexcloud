@@ -974,6 +974,110 @@ kubectl get pods -l app=nginx-static
 
 Можно использовать [teamcity](https://www.jetbrains.com/ru-ru/teamcity/), [jenkins](https://www.jenkins.io/), [GitLab CI](https://about.gitlab.com/stages-devops-lifecycle/continuous-integration/) или GitHub Actions.
 
+   * Копируем репозиторий
+```
+git clone https://github.com/scriptcamp/kubernetes-jenkins
+```
+
+   * Создаем новое пространство имен, чтобы было проще отслеживать работу подов и сервисов
+```
+kubectl create namespace devops-tools
+```
+
+   * Создаем сервисный аккаунт для Jenkins, оставляя без изменений файл serviceAccount.yaml из скачанного репозитория
+```
+kubectl apply -f serviceAccount.yaml
+```
+
+   * Указываем в deployment.yaml тома постоянного хранения данных (настройки пользователя, пайплайны и т.д., так как наш кластер использует ради экономии прерываемые виртуальные машины).
+```
+volumeMounts:
+            - name: jenkins-data
+              mountPath: /var/jenkins_home
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: docker-bin
+              mountPath: /tmp/docker-bin
+
+volumes:
+        - name: jenkins-data
+          persistentVolumeClaim:
+            claimName: jenkins-pvc
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: docker-bin
+          emptyDir: {}
+```
+
+   * И соответственно создаем требуемый persistent volume
+     
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jenkins-pv
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/var/jenkins_home"
+А также persistent volume claim
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jenkins-pvc
+  namespace: devops-tools
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+Для корректной работы необходимо создать директорию /var/jenkins_home на всех нодах нашего кластера, для чего необходимо в deployment.yaml добавить инитконтейнер, устанавливающий docker и git
+
+initContainers:
+        - name: install-docker-git
+          image: ubuntu:22.04
+          command:
+          - sh
+          - -c
+          - |
+            apt-get update && \
+            apt-get install -y curl gnupg && \
+            curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+            apt-get update && \
+            apt-get install -y docker-ce-cli && \
+            mkdir -p /tmp/docker-bin && \
+            cp /usr/bin/docker /tmp/docker-bin/docker
+            apt-get install -y git
+          volumeMounts:
+          - name: docker-bin
+            mountPath: /tmp/docker-bin
+          - name: jenkins-data
+            mountPath: /var/jenkins_home
+          - name: docker-socket
+            mountPath: /var/run/docker.sock
+```
+
+   * Применяем изменения и проверяем успешный запуск Jenkins
+     
+```
+kubectl apply -f pv.yaml
+kubectl apply -f pvc.yaml
+kubectl apply -f deployment.yaml
+kubectl get deployments -n devops-tools
+kubectl get pods -n devops-tools
+```
+
+![image](https://github.com/user-attachments/assets/1031627f-96dc-4abb-a968-cbca204d51df)
+
+
 Ожидаемый результат:
 
 1. Интерфейс ci/cd сервиса доступен по http.
