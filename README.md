@@ -935,7 +935,7 @@ spec:
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 32001
+      nodePort: 32002
   selector:
     app: nginx-static
 ```
