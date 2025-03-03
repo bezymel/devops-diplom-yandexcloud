@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+  namespace: devops-tools
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins-server
+  template:
+    metadata:
+      labels:
+        app: jenkins-server
+    spec:
+      securityContext:
+        fsGroup: 115
+        runAsUser: 0
+      serviceAccountName: jenkins-admin
+      initContainers:
+        - name: install-docker-git
+          image: ubuntu:22.04
+          command:
+          - sh
+          - -c
+          - |
+            apt-get update && \
+            apt-get install -y curl gnupg && \
+            curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+            apt-get update && \
+            apt-get install -y docker-ce-cli && \
+            mkdir -p /tmp/docker-bin && \
+            cp /usr/bin/docker /tmp/docker-bin/docker
+            apt-get install -y git
+          volumeMounts:
+          - name: docker-bin
+            mountPath: /tmp/docker-bin
+          - name: jenkins-data
+            mountPath: /var/jenkins_home
+          - name: docker-socket
+            mountPath: /var/run/docker.sock
+
+      containers:
+        - name: jenkins
+          image: jenkins/jenkins:lts
+          resources:
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+            requests:
+              memory: "500Mi"
+              cpu: "500m"
+          ports:
+            - name: httpport
+              containerPort: 8080
+            - name: jnlpport
+              containerPort: 50000
+          livenessProbe:
+            httpGet:
+              path: "/login"
+              port: 8080
+            initialDelaySeconds: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          readinessProbe:
+            httpGet:
+              path: "/login"
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: jenkins-data
+              mountPath: /var/jenkins_home
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+            - name: docker-bin
+              mountPath: /tmp/docker-bin
+
+      volumes:
+        - name: jenkins-data
+          persistentVolumeClaim:
+            claimName: jenkins-pvc
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+        - name: docker-b
