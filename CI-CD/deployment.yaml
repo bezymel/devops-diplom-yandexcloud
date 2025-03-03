@@ -31,7 +31,7 @@ spec:
             apt-get update && \
             apt-get install -y docker-ce-cli && \
             mkdir -p /tmp/docker-bin && \
-            cp /usr/bin/docker /tmp/docker-bin/docker
+            cp /usr/bin/docker /tmp/docker-bin/docker && \
             apt-get install -y git
           volumeMounts:
           - name: docker-bin
@@ -87,4 +87,5 @@ spec:
         - name: docker-socket
           hostPath:
             path: /var/run/docker.sock
-        - name: docker-b
+        - name: docker-bin
+          emptyDir: {}
